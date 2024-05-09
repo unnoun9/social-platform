@@ -3,14 +3,7 @@
 {% block content %}
     <h1>Login</h1>
     <hr>
-    {% for message in get_flashed_messages() %}
-        <div class="alert alert-secondary alert-dismissible fade show" role="alert">
-            <svg class="bi flex-shrink-0 me-2" role="img" aria-label="Info:"><use xlink:href="#info-fill"/></svg>
-            {{ message}}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    {% endfor %}
-
+    {% include 'flashes.html' %}
     <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded form-bg-dark" data-bs-theme="dark">
         <form method="POST">
             {{ form.hidden_tag() }}
