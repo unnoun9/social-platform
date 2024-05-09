@@ -1,0 +1,21 @@
+body {
+    background-color: #0f0f0f;
+    color: #cfcfcf;
+}
+
+#searchbox {
+    margin-right: 1em;
+}
+
+.bi {
+    width: 1.5em;
+    height: 1.5em;
+}
+
+.alert {
+    font-size: 1em;
+}
+
+.table-font-size {
+    font-size: 1.3em;
+}

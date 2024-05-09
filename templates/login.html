@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Login</h1>
+    <hr>
+    {% for message in get_flashed_messages() %}
+        <div class="alert alert-secondary alert-dismissible fade show" role="alert">
+            <svg class="bi flex-shrink-0 me-2" role="img" aria-label="Info:"><use xlink:href="#info-fill"/></svg>
+            {{ message}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+
+    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded form-bg-dark" data-bs-theme="dark">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            {{ form.display_name_f.label(class="form-label") }}
+            {{ form.display_name_f(class="form-control") }}
+            <br>
+            {{ form.password_f.label(class="form-label") }}
+            {{ form.password_f(class="form-control") }}
+            <br>
+            {{ form.submit_f(class="btn btn-outline-danger") }}
+        </form>
+        <br>
+        <p>Don't have an account? <a class="link-secondary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" href="{{ url_for('signup') }}">Sign up here</a></p>
+    </div>
+{% endblock %}
