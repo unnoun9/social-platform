@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+	{% include 'navbar.html' %}
+    <h2>All Users:</h2>
+    <hr>
+    <table class="table table-hover table-striped table-dark table-borderless table-font-size">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Display name</th>
+                <th>Email address</th>
+                <th>Password (HASH IT DUDE!!!)</th>
+                <th>Signup date</th>
+            </tr>   
+        </thead>
+        {% for user in all_users %}
+            <tr>
+                <td>{{ user[0] }}</td>
+                <td>{{ user[1] }}</td>
+                <td>{{ user[2] }}</td>
+                <td>{{ user[3] }}</td>
+                <td>{{ user[4] }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
