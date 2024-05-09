@@ -44,6 +44,10 @@ class LoginForm(FlaskForm):
     password_f = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=80)])
     submit_f = SubmitField('Login')
 
+# Post form class
+class PostForm(FlaskForm):
+    title_f = StringField('Title', validators=[DataRequired(), Length(min=3, max=100)])
+    details_f = StringField('Details', validators=[DataRequired()])
 
 
 # Routes for different pages
@@ -117,7 +121,15 @@ def login():
             # Redirect to relevant page?
     return render_template('login.html', form=form, login_successful=login_successful)
 
-
+# Create posts
+@app.route('/create_post', methods=['GET','POST'])
+def create_post():
+    form = PostForm()
+    post_successful = False
+    if form.validate_on_submit():
+        # TODO -  Create a post, store it in DB using the current logged in user's ID
+        pass
+    return '' # TODO - Return a the relevand page
 
 # Error handlers
 @app.errorhandler(404)

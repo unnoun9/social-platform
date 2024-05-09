@@ -6,7 +6,7 @@ CREATE TABLE user_accounts (
 	email_address VARCHAR(100) NOT NULL,
     hashed_password VARCHAR(255) NOT NULL,
     signup_date DATE NOT NULL,
-    account_status VARCHAR(20) NOT NULL,
+    account_status VARCHAR(8) NOT NULL DEFAULT 'active',
     pfp_url VARCHAR(255),
     gender VARCHAR(6),
     about VARCHAR(500),
@@ -14,7 +14,7 @@ CREATE TABLE user_accounts (
     date_of_birth DATE,
     privacy BOOLEAN,
     
-    PRIMARY KEY(id)
+    PRIMARY KEY(id),
     UNIQUE (display_name),
     CHECK (gender IN ('male', 'female', 'other')),
     CHECK (account_status IN ('active', 'inactive', 'deleted'))
@@ -29,8 +29,10 @@ CREATE TABLE posts (
     date_created DATE NOT NULL,
     
     PRIMARY KEY(id),
-    FOREIGN KEY(user_id) REFERENCES user_accounts(id),
+    FOREIGN KEY(user_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY(parent_id) REFERENCES posts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE post_media (
@@ -40,6 +42,7 @@ CREATE TABLE post_media (
     
     PRIMARY KEY(id),
     FOREIGN KEY(post_id) REFERENCES posts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE share_posts (
@@ -50,9 +53,12 @@ CREATE TABLE share_posts (
     share_time DATETIME NOT NULL,
 
     PRIMARY KEY(id),
-    FOREIGN KEY(post_id) REFERENCES posts(id),
-    FOREIGN KEY(sender_id) REFERENCES user_accounts(id),
+    FOREIGN KEY(post_id) REFERENCES posts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY(sender_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY(receiver_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE endorsements (
@@ -63,8 +69,10 @@ CREATE TABLE endorsements (
 	date_endorsed DATE NOT NULL,
     
     PRIMARY KEY(id),
-    FOREIGN KEY(user_id) REFERENCES user_accounts(id),
-    FOREIGN KEY(post_id) REFERENCES posts(id),
+    FOREIGN KEY(user_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY(post_id) REFERENCES posts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     CHECK (endorsement_type IN (-1, 1)),
     UNIQUE (user_id, post_id)
 );
@@ -81,16 +89,20 @@ CREATE TABLE post_tags (
 	post_id INT NOT NULL,
     tag_id INT NOT NULL,
     
-    FOREIGN KEY(post_id) REFERENCES posts(id),
+    FOREIGN KEY(post_id) REFERENCES posts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY(tag_id) REFERENCES tags(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE followers (
 	follower_user_id INT NOT NULL,
     followed_user_id INT NOT NULL,
     
-    FOREIGN KEY (follower_user_id) REFERENCES user_accounts(id),
+    FOREIGN KEY (follower_user_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (followed_user_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE messages (
@@ -101,8 +113,10 @@ CREATE TABLE messages (
     time_sent DATETIME NOT NULL,
 
     PRIMARY KEY(id),
-    FOREIGN KEY(sender_id) REFERENCES user_accounts(id),
+    FOREIGN KEY(sender_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY(receiver_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE message_media (
@@ -112,6 +126,7 @@ CREATE TABLE message_media (
 
     PRIMARY KEY(id),
     FOREIGN KEY(message_id) REFERENCES messages(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE blocked_users (
@@ -121,8 +136,10 @@ CREATE TABLE blocked_users (
     date_blocked DATE NOT NULL,
 
     PRIMARY KEY(id),
-    FOREIGN KEY(blocker_id) REFERENCES user_accounts(id),
+    FOREIGN KEY(blocker_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY(blocked_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE notifications (
@@ -134,8 +151,10 @@ CREATE TABLE notifications (
     date_sent DATE NOT NULL,
 	
     PRIMARY KEY(id),
-    FOREIGN KEY(sender_id) REFERENCES user_accounts(id),
-    FOREIGN KEY(receiver_id) REFERENCES user_accounts(id),
+    FOREIGN KEY(sender_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY(receiver_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     CHECK(notification_type IN ('message', 'share', 'request'))
 );
 
@@ -148,6 +167,7 @@ CREATE TABLE communities (
 
     PRIMARY KEY(id),
     FOREIGN KEY(admin_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE community_members (
@@ -156,11 +176,8 @@ CREATE TABLE community_members (
     date_joined DATE NOT NULL,
 
     PRIMARY KEY(community_id, member_id),
-    FOREIGN KEY(community_id) REFERENCES communities(id),
+    FOREIGN KEY(community_id) REFERENCES communities(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY(member_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
-
-INSERT INTO user_accounts (display_name, email_address, hashed_password, signup_date)
-VALUES
-('Abdul Hadi', 'Abdul@Hadi', 'lazyman123', CURDATE()),
-('Syed Abdullah', 'Syed@Abdullah', 'bruhman123', CURDATE());
