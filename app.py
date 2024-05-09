@@ -48,6 +48,7 @@ class LoginForm(FlaskForm):
 class PostForm(FlaskForm):
     title_f = StringField('Title', validators=[DataRequired(), Length(min=3, max=100)])
     details_f = StringField('Details', validators=[DataRequired()])
+    submit_f = SubmitField('Create post')
 
 
 # Routes for different pages
