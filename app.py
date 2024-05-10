@@ -1,10 +1,11 @@
-from flask import Flask, g, render_template, redirect, url_for, flash
-from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo, Length
-import mysql.connector
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, g, render_template, redirect, request, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+import mysql.connector
+from flask_wtf import FlaskForm
+from wtforms import StringField, EmailField, PasswordField, SubmitField, SelectField, DateField
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
+from wtforms.widgets import TextArea
 
 
 
@@ -12,7 +13,6 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 app = Flask(__name__)
 # Secret key for CSRF protection
 app.config['SECRET_KEY'] = "secretkey11199"
-# TODO - Cookies and Session stuff
 
 
 
@@ -68,6 +68,19 @@ class LoginForm(FlaskForm):
     display_name_f = StringField('Display name', validators=[DataRequired(), Length(min=3, max=50)])
     password_f = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=80)])
     submit_f = SubmitField('Login')
+
+# Edit profile form class
+class EditProfileForm(FlaskForm):
+    display_name_f = StringField('Display name', validators=[DataRequired()])
+    email_f = EmailField('Email', validators=[DataRequired()])
+    pfp_url_f = StringField('Profile picture URL')
+    about_f = StringField('About', widget=TextArea())
+    gender_f = SelectField('Gender', choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')])
+    date_of_birth_f = DateField('Date of Birth', validators=[Optional()])
+    location_f = StringField('Location')
+    privacy_f = SelectField('Account privacy', choices=[('Public', 'Public'), ('Private', 'Private')])
+    # TODO - Change password field
+    submit_f = SubmitField('Save changes')
 
 # Post form class
 class PostForm(FlaskForm):
@@ -150,25 +163,114 @@ def logout():
 @login_required
 def profile():
     try:
-        query = 'SELECT display_name, pfp_url, about, gender, location, YEAR(CURDATE()) - YEAR(date_of_birth) AS age FROM user_accounts WHERE id = %s'
+        query = "SELECT id, display_name, email_address, hashed_password, signup_date, account_status, pfp_url, gender, about, location, date_of_birth, TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) - (DATE_FORMAT(CURDATE(), '%m%d') < DATE_FORMAT(date_of_birth, '%m%d')) AS age, privacy FROM user_accounts WHERE id = %s"
         g.cursor.execute(query, (current_user.id,))
         user_details = g.cursor.fetchone()
         if not user_details:
             flash("User not found.", "error")
             return redirect(url_for('index'))
         user_info = {
-            "display_name": user_details[0],
-            "pfp_url": user_details[1],
-            "about": user_details[2],
-            "gender": user_details[3],
-            "location": user_details[4],
-            "age": user_details[5],
+            "display_name": user_details[1],
+            "email_address": user_details[2],
+            "signup_date": user_details[4],
+            "account_status": user_details[5],
+            "pfp_url": user_details[6],
+            "gender": user_details[7],
+            "about": user_details[8],
+            "location": user_details[9],
+            "date_of_birth": user_details[10],
+            "age": user_details[11],
+            "privacy": user_details[12]
         }
         return render_template('profile.html', user=user_info)
     except Exception as e:
         flash("An error occurred while fetching your profile data.", "error")
         app.logger.error(f"Error fetching user profile: {e}")
         return redirect(url_for('index'))
+    
+# Edit user profile
+@app.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def profile_edit():
+    form = EditProfileForm()
+    query = "SELECT id, display_name, email_address, hashed_password, signup_date, account_status, pfp_url, gender, about, location, date_of_birth, TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) - (DATE_FORMAT(CURDATE(), '%m%d') < DATE_FORMAT(date_of_birth, '%m%d')) AS age, privacy FROM user_accounts WHERE id = %s"
+    g.cursor.execute(query, (current_user.id,))
+    user_details = g.cursor.fetchone()
+    user_info = {
+        "display_name": user_details[1],
+        "email_address": user_details[2],
+        "signup_date": user_details[4],
+        "account_status": user_details[5],
+        "pfp_url": user_details[6],
+        "gender": user_details[7],
+        "about": user_details[8],
+        "location": user_details[9],
+        "date_of_birth": user_details[10],
+        "age": user_details[11],
+        "privacy": user_details[12]
+    }
+    if request.method == 'GET':
+        # Fetch existing data and populate the form only on GET request
+        form.display_name_f.data = user_info["display_name"]
+        form.email_f.data = user_info["email_address"]
+        form.pfp_url_f.data = user_info["pfp_url"]
+        form.about_f.data = user_info["about"]
+        form.gender_f.data = user_info["gender"]
+        form.date_of_birth_f.data = user_info["date_of_birth"]
+        form.location_f.data = user_info["location"]
+        form.privacy_f.data = user_info["privacy"]
+        
+    if form.validate_on_submit():
+        # Update user details
+        query = """
+            UPDATE user_accounts SET
+                display_name = %s,
+                email_address = %s,
+                pfp_url = %s,
+                about = %s,
+                gender = %s,
+                date_of_birth = %s,
+                location = %s,
+                privacy = %s
+            WHERE id = %s
+        """
+        g.cursor.execute(query, (
+            form.display_name_f.data,
+            form.email_f.data,
+            form.pfp_url_f.data,
+            form.about_f.data,
+            form.gender_f.data,
+            form.date_of_birth_f.data.strftime('%Y-%m-%d') if form.date_of_birth_f.data else None,
+            form.location_f.data,
+            form.privacy_f.data,
+            current_user.id
+        ))
+        g.db.commit()
+        flash('Profile updated successfully.')
+        return redirect(url_for('profile'))
+    return render_template('profile_edit.html', form=form, user=user_info)
+
+# Third party view of user profiles / accounts
+@app.route('/profile/user/<int:user_id>')
+def profile_view(user_id):
+    query = 'SELECT id, display_name, signup_date, account_status, pfp_url, gender, about, location, TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) AS age, privacy FROM user_accounts WHERE id = %s'
+    g.cursor.execute(query, (user_id,))
+    user_details = g.cursor.fetchone()
+    if not user_details:
+        flash("User not found.", "error")
+        return redirect(url_for('index'))
+    user_info = {
+            "display_name": user_details[1],
+            "signup_date": user_details[2],
+            "account_status": user_details[3],
+            "pfp_url": user_details[4],
+            "gender": user_details[5],
+            "about": user_details[6],
+            "location": user_details[7],
+            "age": user_details[8],
+            "privacy": user_details[9]
+    }
+    return render_template('profile_view.html', user=user_info)
 
 # Create posts
 @app.route('/create_post', methods=['GET','POST'])

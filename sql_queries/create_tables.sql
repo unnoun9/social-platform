@@ -6,18 +6,19 @@ CREATE TABLE user_accounts (
 	email_address VARCHAR(100) NOT NULL,
     hashed_password VARCHAR(255) NOT NULL,
     signup_date DATE NOT NULL,
-    account_status VARCHAR(8) NOT NULL DEFAULT 'active',
+    account_status VARCHAR(8) NOT NULL DEFAULT 'Active',
     pfp_url VARCHAR(255),
     gender VARCHAR(6),
     about VARCHAR(500),
     location VARCHAR(50),
     date_of_birth DATE,
-    privacy BOOLEAN,
+    privacy VARCHAR(8) DEFAULT 'Public',
     
     PRIMARY KEY(id),
     UNIQUE (display_name),
-    CHECK (gender IN ('male', 'female', 'other')),
-    CHECK (account_status IN ('active', 'inactive', 'deleted'))
+    CHECK (gender IN ('Male', 'Female', 'Other')),
+    CHECK (account_status IN ('Active', 'Inactive', 'Deleted')),
+    CHECK (privacy IN ('Public', 'Private'))
 );
 
 CREATE TABLE posts (
@@ -77,23 +78,23 @@ CREATE TABLE endorsements (
     UNIQUE (user_id, post_id)
 );
 
-CREATE TABLE tags (
-	id INT NOT NULL AUTO_INCREMENT,
-    title VARCHAR(30) NOT NULL,
-    description VARCHAR(100) NOT NULL,
+-- CREATE TABLE tags (
+-- 	id INT NOT NULL AUTO_INCREMENT,
+--     title VARCHAR(30) NOT NULL,
+--     description VARCHAR(100) NOT NULL,
     
-    PRIMARY KEY(id)
-);
+--     PRIMARY KEY(id)
+-- );
 
-CREATE TABLE post_tags (
-	post_id INT NOT NULL,
-    tag_id INT NOT NULL,
+-- CREATE TABLE post_tags (
+-- 	post_id INT NOT NULL,
+--     tag_id INT NOT NULL,
     
-    FOREIGN KEY(post_id) REFERENCES posts(id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY(tag_id) REFERENCES tags(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-);
+--     FOREIGN KEY(post_id) REFERENCES posts(id)
+--         ON DELETE CASCADE ON UPDATE CASCADE,
+--     FOREIGN KEY(tag_id) REFERENCES tags(id)
+--         ON DELETE CASCADE ON UPDATE CASCADE
+-- );
 
 CREATE TABLE followers (
 	follower_user_id INT NOT NULL,

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% include 'navbar.html' %}
+    {% include 'flashes.html' %}
+    <h1>{{ user["display_name"] }}'s profile (edit)</h1>
+    <br>
+    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded form-bg-dark" data-bs-theme="dark">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            {{ form.display_name_f.label(class="form-label") }}
+            {{ form.display_name_f(class="form-control") }}
+            <br>
+            {{ form.email_f.label(class="form-label") }}
+            {{ form.email_f(class="form-control") }}
+            <br>
+            {{ form.pfp_url_f.label(class="form-label") }}
+            {{ form.pfp_url_f(class="form-control") }}
+            <br>
+            {{ form.about_f.label(class="form-label") }}
+            {{ form.about_f(class="form-control") }}
+            <br>
+            {{ form.gender_f.label(class="form-label") }}
+            {{ form.gender_f(class="form-control") }}
+            <br>
+            {{ form.date_of_birth_f.label(class="form-label") }}
+            {{ form.date_of_birth_f(class="form-control") }}
+            <br>
+            {{ form.location_f.label(class="form-label") }}
+            {{ form.location_f(class="form-control") }}
+            <br>
+            {{ form.privacy_f.label(class="form-label") }}
+            {{ form.privacy_f(class="form-control") }}
+            <br>
+            {{ form.submit_f(class="btn btn-outline-danger") }}
+        </form>
+        <br>
+    </div>
+
+{% endblock %}

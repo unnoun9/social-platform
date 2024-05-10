@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% include 'navbar.html' %}
+    {% include 'flashes.html' %}
+    <h1>{{ user["display_name"] }}'s profile</h1>
+    <br>
+    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded form-bg-dark pos-relative" data-bs-theme="dark">
+        <div class="profile-pfp">
+            {% if not user["pfp_url"] or user["privacy"] == 'Private' %}
+                <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" alt="Profile Picture Default">
+            {% else %}
+                <img src="{{ user['pfp_url'] }}" alt="Profile Picture Default">
+            {% endif %}
+        </div>
+        <br>
+        <hr>
+        
+        {% if user["privacy"] == 'Private' %}
+            <p class="text-danger">This user has set their profile to private</p>
+        {% else %}
+            <div class="profile-about">
+                <h2>About</h2><hr>
+                {% if not user["about"] %}
+                    <p class="text-muted fw-lighter">No bio yet</p>
+                {% else %}
+                    <p>{{ user["about"] }}</p>
+                {% endif %}
+            </div>
+
+            <h2>Gender</h2>
+            {% if not user["gender"] %}
+                <p class="text-muted fw-lighter">Not specified yet</p>
+            {% else %}
+                <p>{{ user["gender"] }}</p>
+            {% endif %}
+            <hr>
+
+            <h2>Location</h2>
+            {% if not user["location"] %}
+                <p class="text-muted fw-lighter">Not entered yet</p>
+            {% else %}
+                <p>{{ user["location"] }}</p>
+            {% endif %}
+            <hr>
+
+            <h2>Age</h2>
+            {% if not user["age"] %}
+                <p class="text-muted fw-lighter">Not entered yet</p>
+            {% else %}
+                <p>{{ user["age"] }}</p>
+            {% endif %}
+            <hr>
+
+            <h2>Account creation date</h2>
+            <p>{{ user["signup_date"] }}</p>
+        {% endif %}
+
+    </div>
+
+{% endblock %}

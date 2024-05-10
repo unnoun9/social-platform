@@ -11,6 +11,13 @@
                 <th>Display name</th>
                 <th>Email address</th>
                 <th>Signup date</th>
+                <th>Acount status</th>
+                <th>Gender</th>
+                <th>About</th>
+                <th>Location</th>
+                <th>DOB</th>
+                <th>Privacy</th>
+                <th>Link</th>
             </tr>   
         </thead>
         {% for user in all_users %}
@@ -19,6 +26,13 @@
                 <td>{{ user[1] }}</td>
                 <td>{{ user[2] }}</td>
                 <td>{{ user[4] }}</td>
+                <td>{{ user[5] }}</td>
+                <td>{{ user[7] }}</td>
+                <td class="text-break">{{ user[8] }}</td>
+                <td>{{ user[9] }}</td>
+                <td>{{ user[10] }}</td>
+                <td>{{ user[11] }}</td>
+                <td><a href="{{ url_for('profile_view', user_id=user[0]) }}">View</a></td>
             </tr>
         {% endfor %}
     </table>
