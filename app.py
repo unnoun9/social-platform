@@ -46,12 +46,9 @@ class User(UserMixin):
 # Load user from database
 @login_manager.user_loader
 def load_user(user_id):
-    g.db.reconnect()
-    g.cursor = g.db.cursor()
     query = 'SELECT id, display_name, hashed_password FROM user_accounts WHERE id = %s'
     g.cursor.execute(query, (user_id,))
     user = g.cursor.fetchone()
-    g.cursor.close()
     if user:
         return User(user_id=user[0], display_name=user[1], hashed_password=user[2])
     return None
@@ -152,7 +149,26 @@ def logout():
 @app.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html')
+    try:
+        query = 'SELECT display_name, pfp_url, about, gender, location, YEAR(CURDATE()) - YEAR(date_of_birth) AS age FROM user_accounts WHERE id = %s'
+        g.cursor.execute(query, (current_user.id,))
+        user_details = g.cursor.fetchone()
+        if not user_details:
+            flash("User not found.", "error")
+            return redirect(url_for('index'))
+        user_info = {
+            "display_name": user_details[0],
+            "pfp_url": user_details[1],
+            "about": user_details[2],
+            "gender": user_details[3],
+            "location": user_details[4],
+            "age": user_details[5],
+        }
+        return render_template('profile.html', user=user_info)
+    except Exception as e:
+        flash("An error occurred while fetching your profile data.", "error")
+        app.logger.error(f"Error fetching user profile: {e}")
+        return redirect(url_for('index'))
 
 # Create posts
 @app.route('/create_post', methods=['GET','POST'])

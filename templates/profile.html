@@ -3,5 +3,43 @@
 {% block content %}
     {% include 'navbar.html' %}
     {% include 'flashes.html' %}
-    <h1>User Profile</h1>
+    <!-- <h1>User Profile</h1> -->
+    <h1>{{ user["display_name"] }}'s profile</h1>
+    <br>
+    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded form-bg-dark" data-bs-theme="dark">
+        {% if not user["pfp_url"] %}
+            <img src="https://wallpapers-clan.com/wp-content/uploads/2022/08/default-pfp-2.jpg" alt="Profile Picture Default" class="img-fluid rounded">
+        {% else %}
+            <img src="{{ user['pfp_url'] }}" alt="Profile Picture Default" class="img-fluid rounded">
+        {% endif %}
+        <br>
+        <h2>About</h2>
+        {% if not user["about"] %}
+            <p class="">No bio</p>
+        {% else %}
+            <p>{{ user["about"] }}</p>
+        {% endif %}
+
+        <h2>Gender</h2>
+        {% if not user["gender"] %}
+            <p>Not entered yet</p>
+        {% else %}
+            <p>{{ user["gender"] }}</p>
+        {% endif %}
+
+        <h2>Location</h2>
+        {% if not user["location"] %}
+            <p>Not entered yet</p>
+        {% else %}
+            <p>{{ user["location"] }}</p>
+        {% endif %}
+
+        <h2>Age</h2>
+        {% if not user["age"] %}
+            <p>Not entered yet</p>
+        {% else %}
+            <p>{{ user["age"] }}</p>
+        {% endif %}
+    </div>
+
 {% endblock %}
