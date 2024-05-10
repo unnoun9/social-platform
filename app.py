@@ -1,22 +1,14 @@
+import mysql.connector
 from flask import Flask, g, render_template, redirect, request, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-import mysql.connector
-from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, SubmitField, SelectField, DateField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
-from wtforms.widgets import TextArea
-
-
+from forms import SignupForm, LoginForm, EditProfileForm, PostForm
 
 # Flask app instance
 app = Flask(__name__)
 # Secret key for CSRF protection
 app.config['SECRET_KEY'] = "secretkey11199"
 
-
-
-# Database
 # Initialize database at the start of every request
 @app.before_request
 def init_db():
@@ -28,8 +20,6 @@ def init_db():
 def teardown_db(exception):
     g.cursor.close()
     g.db.close()
-
-
 
 # Initialize login manager
 login_manager = LoginManager()
@@ -55,54 +45,14 @@ def load_user(user_id):
 
 
 
-# Sign up form class
-class SignupForm(FlaskForm):
-    display_name_f = StringField('Display name', validators=[DataRequired()])
-    email_f = EmailField('Email', validators=[DataRequired()])
-    password_f = PasswordField('Password', validators=[DataRequired()])
-    password_confirm_f = PasswordField('Confirm Password', validators=[DataRequired(), Length(min=8, max=80)])
-    submit_f = SubmitField('Register')
-
-# Login form class
-class LoginForm(FlaskForm):
-    display_name_f = StringField('Display name', validators=[DataRequired(), Length(min=3, max=50)])
-    password_f = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=80)])
-    submit_f = SubmitField('Login')
-
-# Edit profile form class
-class EditProfileForm(FlaskForm):
-    display_name_f = StringField('Display name', validators=[DataRequired()])
-    email_f = EmailField('Email', validators=[DataRequired()])
-    pfp_url_f = StringField('Profile picture URL')
-    about_f = StringField('About', widget=TextArea())
-    gender_f = SelectField('Gender', choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')])
-    date_of_birth_f = DateField('Date of Birth', validators=[Optional()])
-    location_f = StringField('Location')
-    privacy_f = SelectField('Account privacy', choices=[('Public', 'Public'), ('Private', 'Private')])
-    # TODO - Change password field
-    submit_f = SubmitField('Save changes')
-
-# Post form class
-class PostForm(FlaskForm):
-    title_f = StringField('Title', validators=[DataRequired(), Length(min=3, max=100)])
-    details_f = StringField('Details', validators=[DataRequired()])
-    submit_f = SubmitField('Create post')
 
 
 
-# Routes for different pages
+# Routes
 # Index
 @app.route('/')
 def index():
     return render_template('index.html')
-
-# Shows all users (for testing only)
-@app.route('/users')
-def users():
-    query = 'SELECT * FROM user_accounts ORDER BY signup_date'
-    g.cursor.execute(query)
-    all_users = g.cursor.fetchall() # This is only for testing purposes
-    return render_template('users.html', all_users=all_users)
 
 # Signup
 @app.route('/signup', methods=['GET','POST'])
@@ -251,7 +201,7 @@ def profile_edit():
     return render_template('profile_edit.html', form=form, user=user_info)
 
 # Third party view of user profiles / accounts
-@app.route('/profile/user/<int:user_id>')
+@app.route('/profiles/user/<int:user_id>')
 def profile_view(user_id):
     query = 'SELECT id, display_name, signup_date, account_status, pfp_url, gender, about, location, TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) AS age, privacy FROM user_accounts WHERE id = %s'
     g.cursor.execute(query, (user_id,))
@@ -283,6 +233,14 @@ def create_post():
         pass
     return '' # TODO - Return a the relevand page
 
+# Shows all users (for testing only)
+@app.route('/users')
+def users():
+    query = 'SELECT * FROM user_accounts ORDER BY signup_date'
+    g.cursor.execute(query)
+    all_users = g.cursor.fetchall() # This is only for testing purposes
+    return render_template('users.html', all_users=all_users)
+
 # Error handlers
 @app.errorhandler(404)
 def page_not_found(e):
@@ -291,8 +249,6 @@ def page_not_found(e):
 @app.errorhandler(500)
 def server_error(e):
     return render_template('500.html'), 500
-
-
 
 # Run the app
 if __name__ == '__main__':
