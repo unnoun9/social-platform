@@ -7,7 +7,7 @@
     <br>
     <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded form-bg-dark pos-relative" data-bs-theme="dark">
         <div class="profile-pfp">
-            {% if not user["pfp_url"] or user["privacy"] == 'Private' %}
+            {% if not user["pfp_url"] %}
                 <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" alt="Profile Picture Default">
             {% else %}
                 <img src="{{ user['pfp_url'] }}" alt="Profile Picture Default">
@@ -52,10 +52,40 @@
             {% endif %}
             <hr>
 
-            <h2>Account creation date</h2>
+            <h2>Account created on</h2>
             <p>{{ user["signup_date"] }}</p>
         {% endif %}
 
     </div>
+
+    {% if user["privacy"] == 'Public' %}
+    <hr>
+    <h1>{{ user["display_name"] }}'s Posts</h1>
+    <br>
+
+    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded form-bg-dark pos-relative" data-bs-theme="dark">
+        {% for post in user["posts"] %}
+        <div class="card hover-overlay shadow-1-strong rounded"">
+            <div class="card-header">
+                {{ post[3] }}
+                <a class="btn btn-outline-secondary btn-sm indent-to-right-of-post" href="{{ url_for('post_view', post_id=post[0])}}">View</a>
+            </div>
+            <div class="card-body">
+                <blockquote class="blockquote mb-0">
+                    {% if post[4] %}
+                    <p class="text-break text-truncate" style="max-width: 95%">{{ post[4] }}</p>
+                    {% else %}
+                    <p class="text-muted fw-lighter">No details entered yet</p>
+                    {% endif %}
+                    <br>
+                    <footer class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ post[5] }}</cite></footer>
+                </blockquote>
+            </div>
+        </div>
+        <br>
+        {% endfor %}
+
+    </div>
+    {% endif %}
 
 {% endblock %}

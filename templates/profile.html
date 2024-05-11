@@ -3,14 +3,16 @@
 {% block content %}
     {% include 'navbar.html' %}
     {% include 'flashes.html' %}
+
     <h1>{{ user["display_name"] }}'s profile</h1>
     <br>
-    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded form-bg-dark pos-relative" data-bs-theme="dark">
+    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded pos-relative">
+        
         <div class="profile-pfp">
             {% if not user["pfp_url"] %}
-                <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" alt="Profile Picture Default">
+            <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" alt="Profile Picture Default">
             {% else %}
-                <img src="{{ user['pfp_url'] }}" alt="Profile Picture Default">
+            <img src="{{ user['pfp_url'] }}" alt="Profile Picture Default">
             {% endif %}
         </div>
         <br>
@@ -19,52 +21,84 @@
         <div class="profile-about">
             <h2>About</h2><hr>
             {% if not user["about"] %}
-                <p class="text-muted fw-lighter">No bio yet</p>
+            <p class="text-muted fw-lighter">No bio yet</p>
             {% else %}
-                <p>{{ user["about"] }}</p>
+                <p>{{ user["about"] }}  </p>
             {% endif %}
         </div>
-
+        
         <h2>Email</h2>
         <p>{{ user["email_address"] }}</p>
         <hr>
 
         <h2>Gender</h2>
         {% if not user["gender"] %}
-            <p class="text-muted fw-lighter">Not specified yet</p>
+        <p class="text-muted fw-lighter">Not specified yet</p>
         {% else %}
-            <p>{{ user["gender"] }}</p>
+        <p>{{ user["gender"] }}</p>
         {% endif %}
         <hr>
 
         <h2>Location</h2>
         {% if not user["location"] %}
-            <p class="text-muted fw-lighter">Not entered yet</p>
+        <p class="text-muted fw-lighter">Not entered yet</p>
         {% else %}
-            <p>{{ user["location"] }}</p>
+        <p>{{ user["location"] }}</p>
         {% endif %}
         <hr>
 
         <h2>Age</h2>
         {% if not user["age"] %}
-            <p class="text-muted fw-lighter">Not entered yet</p>
+        <p class="text-muted fw-lighter">Not entered yet</p>
         {% else %}
-            <p>{{ user["age"] }}</p>
+        <p>{{ user["age"] }}</p>
         {% endif %}
         <hr>
 
         <h2>Date of birth</h2>
         {% if not user["date_of_birth"] %}
-            <p class="text-muted fw-lighter">Not entered yet</p>
+        <p class="text-muted fw-lighter">Not entered yet</p>
         {% else %}
-            <p>{{ user["date_of_birth"] }}</p>
+        <p>{{ user["date_of_birth"] }}</p>
         {% endif %}
         <hr>
 
-        <h2>Account creation date</h2>
+        <h2>Account created on</h2>
         <p>{{ user["signup_date"] }}</p>
-        <hr>
-        <a href="{{ url_for('profile_edit') }}"><button class="btn btn-outline-danger">Account settings</button></a>
+
+    </div>
+    
+    <hr>
+    <h1>{{ user["display_name"] }}'s Posts</h1>
+    <br>
+
+    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded pos-relative">
+        
+        <a href="{{ url_for('post_create') }}"><button class="btn btn-outline-danger">Create a new post</button></a>
+        <hr><br>
+        
+        {% for post in user["posts"] %}
+        <div class="card hover-overlay shadow-1-strong rounded"">
+            <div class="card-header">
+                {{ post[3] }}
+                <a class="btn btn-outline-secondary btn-sm indent-to-a-bit-right-of-post" href="{{ url_for('post_edit', post_id=post[0])}}">Edit</a>
+                <a class="btn btn-outline-secondary btn-sm indent-to-right-of-post" href="{{ url_for('post_view', post_id=post[0])}}">View</a>
+            </div>
+            <div class="card-body">
+                <blockquote class="blockquote mb-0">
+                    {% if post[4] %}
+                    <p class="text-break text-truncate" style="max-width: 95%">{{ post[4] }}</p>
+                    {% else %}
+                    <p class="text-muted fw-lighter">No details entered yet</p>
+                    {% endif %}
+                    <br>
+                    <footer class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ post[5] }}</cite></footer>
+                </blockquote>
+            </div>
+        </div>
+        <br>
+        {% endfor %}
+
     </div>
 
 {% endblock %}

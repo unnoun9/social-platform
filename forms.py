@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, SubmitField, SelectField, DateField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
+from wtforms import StringField, EmailField, PasswordField, SubmitField, SelectField, DateField, TextAreaField
+from wtforms.validators import DataRequired, Length, Optional
 from wtforms.widgets import TextArea
 
 # Sign up form class
@@ -22,7 +22,7 @@ class EditProfileForm(FlaskForm):
     display_name_f = StringField('Display name', validators=[DataRequired()])
     email_f = EmailField('Email', validators=[DataRequired()])
     pfp_url_f = StringField('Profile picture URL')
-    about_f = StringField('About', widget=TextArea())
+    about_f = TextAreaField('About', widget=TextArea(), validators=[Length(min=0, max=500)])
     gender_f = SelectField('Gender', choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')])
     date_of_birth_f = DateField('Date of Birth', validators=[Optional()])
     location_f = StringField('Location')
@@ -32,6 +32,12 @@ class EditProfileForm(FlaskForm):
 
 # Post form class
 class PostForm(FlaskForm):
-    title_f = StringField('Title', validators=[DataRequired(), Length(min=3, max=100)])
-    details_f = StringField('Details', validators=[DataRequired()])
+    title_f = StringField('Title', validators=[DataRequired(), Length(min=1, max=100)])
+    details_f = TextAreaField('Details', widget=TextArea(), validators=[Length(min=0, max=10000)])
     submit_f = SubmitField('Create post')
+
+# Post form class
+class EditPostForm(FlaskForm):
+    title_f = StringField('Title', validators=[DataRequired(), Length(min=1, max=100)])
+    details_f = TextAreaField('Details', widget=TextArea(), validators=[Length(min=0, max=10000)])
+    submit_f = SubmitField('Edit post')

@@ -26,7 +26,7 @@ CREATE TABLE posts (
 	user_id INT NOT NULL,
     parent_id INT DEFAULT NULL,
     title VARCHAR(100) NOT NULL,
-    details TEXT,
+    details VARCHAR(10000),
     date_created DATE NOT NULL,
     
     PRIMARY KEY(id),

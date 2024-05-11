@@ -2,7 +2,7 @@ import mysql.connector
 from flask import Flask, g, render_template, redirect, request, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import SignupForm, LoginForm, EditProfileForm, PostForm
+from forms import SignupForm, LoginForm, EditProfileForm, PostForm, EditPostForm
 
 # Flask app instance
 app = Flask(__name__)
@@ -28,19 +28,28 @@ login_manager.login_view = 'login'
 
 # User class for login manager
 class User(UserMixin):
-    def __init__ (self, user_id, display_name, hashed_password):
+    def __init__ (self, user_id, display_name, email_address, hashed_password, signup_date, account_status, pfp_url, gender, about, location, date_of_birth, privacy):
         self.id = user_id
         self.display_name = display_name
+        self.email_address = email_address
         self.hashed_password = hashed_password
+        self.signup_date = signup_date
+        self.account_status = account_status
+        self.pfp_url = pfp_url
+        self.gender = gender
+        self.about = about
+        self.location = location
+        self.date_of_birth = date_of_birth
+        self.privacy = privacy
 
 # Load user from database
 @login_manager.user_loader
 def load_user(user_id):
-    query = 'SELECT id, display_name, hashed_password FROM user_accounts WHERE id = %s'
+    query = 'SELECT * FROM user_accounts WHERE id = %s'
     g.cursor.execute(query, (user_id,))
     user = g.cursor.fetchone()
     if user:
-        return User(user_id=user[0], display_name=user[1], hashed_password=user[2])
+        return User(user_id=user[0], display_name=user[1], email_address=user[2], hashed_password=user[3], signup_date=user[4], account_status=user[5], pfp_url=user[6], gender=user[7], about=user[8], location=user[9], date_of_birth=user[10], privacy=user[11])
     return None
 
 
@@ -52,6 +61,7 @@ def load_user(user_id):
 # Index
 @app.route('/')
 def index():
+    # TODO - Fetch posts from all users and display them and shit
     return render_template('index.html')
 
 # Signup
@@ -112,8 +122,13 @@ def logout():
 @app.route('/profile')
 @login_required
 def profile():
-    try:
-        query = "SELECT id, display_name, email_address, hashed_password, signup_date, account_status, pfp_url, gender, about, location, date_of_birth, TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) - (DATE_FORMAT(CURDATE(), '%m%d') < DATE_FORMAT(date_of_birth, '%m%d')) AS age, privacy FROM user_accounts WHERE id = %s"
+    try: # try except is just for error handling here, we can remove it if we want
+        # Get the current logged in user's details
+        query = """
+            SELECT id, display_name, email_address, hashed_password, signup_date, account_status, pfp_url, gender, about, location, date_of_birth, TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) - (DATE_FORMAT(CURDATE(), '%m%d') < DATE_FORMAT(date_of_birth, '%m%d')) AS age, privacy
+            FROM user_accounts
+            WHERE id = %s
+        """
         g.cursor.execute(query, (current_user.id,))
         user_details = g.cursor.fetchone()
         if not user_details:
@@ -132,6 +147,15 @@ def profile():
             "age": user_details[11],
             "privacy": user_details[12]
         }
+        # Get the current logged in user's posts
+        query = """
+            SELECT *
+            FROM posts
+            WHERE user_id = %s
+            ORDER BY date_created DESC
+        """
+        g.cursor.execute(query, (current_user.id,))
+        user_info["posts"] = g.cursor.fetchall()
         return render_template('profile.html', user=user_info)
     except Exception as e:
         flash("An error occurred while fetching your profile data.", "error")
@@ -203,6 +227,9 @@ def profile_edit():
 # Third party view of user profiles / accounts
 @app.route('/profiles/user/<int:user_id>')
 def profile_view(user_id):
+    if current_user.id == user_id:
+        return redirect(url_for('profile'))
+    # Get the user details
     query = 'SELECT id, display_name, signup_date, account_status, pfp_url, gender, about, location, TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) AS age, privacy FROM user_accounts WHERE id = %s'
     g.cursor.execute(query, (user_id,))
     user_details = g.cursor.fetchone()
@@ -220,18 +247,101 @@ def profile_view(user_id):
             "age": user_details[8],
             "privacy": user_details[9]
     }
+    # Get the user's posts
+    query = """
+            SELECT *
+            FROM posts
+            WHERE user_id = %s
+            ORDER BY date_created DESC
+        """
+    g.cursor.execute(query, (user_id,))
+    user_info["posts"] = g.cursor.fetchall()
     return render_template('profile_view.html', user=user_info)
 
 # Create posts
-@app.route('/create_post', methods=['GET','POST'])
+@app.route('/post/create', methods=['GET','POST'])
 @login_required
-def create_post():
+def post_create():
     form = PostForm()
-    post_successful = False
     if form.validate_on_submit():
-        # TODO -  Create a post and store it in DB using the current logged in user's ID
-        pass
-    return '' # TODO - Return a the relevand page
+        query = """
+            INSERT INTO POSTS (user_id, title, details, date_created)
+            VALUES (%s, %s, %s, CURDATE())
+        """
+        g.cursor.execute(query, (current_user.id, form.title_f.data, form.details_f.data))
+        g.db.commit()
+        flash("Post created successfully.")
+        return redirect(url_for('profile'))
+    return render_template('post_create.html', form=form)
+
+# Edit posts
+@app.route('/post/edit/<int:post_id>', methods=['GET','POST'])
+@login_required
+def post_edit(post_id):
+    form = EditPostForm()
+    query = 'SELECT * FROM posts WHERE id = %s'
+    g.cursor.execute(query, (post_id,))
+    post = g.cursor.fetchone()
+    if not post:
+        flash("Post not found.", "error")
+        return redirect(url_for('index'))
+    if current_user.id != post[1]:
+        flash("You are not authorized to edit this post.", "error")
+        return redirect(url_for('index'))
+    if request.method == 'GET':
+        form.title_f.data = post[3]
+        form.details_f.data = post[4]
+    if form.validate_on_submit():
+        query = 'UPDATE posts SET title = %s, details = %s WHERE id = %s'
+        g.cursor.execute(query, (form.title_f.data, form.details_f.data, post_id))
+        g.db.commit()
+        flash("Post updated successfully.")
+        return redirect(url_for('post_view', post_id=post_id))
+    return render_template('post_edit.html', form=form)
+
+# Delete posts
+@app.route('/post/delete/<int:post_id>')
+@login_required
+def post_delete(post_id):
+    try:
+        query = 'SELECT * FROM posts WHERE id = %s'
+        g.cursor.execute(query, (post_id,))
+        post = g.cursor.fetchone()
+        if not post:
+            flash("Post not found.", "error")
+            return redirect(url_for('index'))
+        if current_user.id != post[1]:
+            flash("You are not authorized to delete this post.", "error")
+            return redirect(url_for('index'))
+        query = 'DELETE FROM posts WHERE id = %s'
+        g.cursor.execute(query, (post_id,))
+        g.db.commit()
+        flash("Post deleted successfully.")
+        return redirect(url_for('profile'))
+    except:
+        flash("An error occurred while deleting the post.", "error")
+        return redirect(url_for('profile'))
+
+# Show Individual posts
+@app.route('/post/<int:post_id>')
+def post_view(post_id):
+    # Get the post details
+    query = 'SELECT * FROM posts WHERE id = %s'
+    g.cursor.execute(query, (post_id,))
+    post = g.cursor.fetchone()
+    if not post:
+        flash("Post not found.", "error")
+        return redirect(url_for('index'))
+    # Get the privacy of the user who created the post and use that accordingly
+    query = 'SELECT * FROM user_accounts WHERE id = %s'
+    g.cursor.execute(query, (post[1],))
+    user = g.cursor.fetchone()
+    if user[11] == "Private":
+        if current_user.id != post[1]:
+            flash("The owner of this post has a private account. You cannot view this post.")
+            return redirect(url_for('index'))
+    return render_template('post_view.html', post=post, user=user)
+
 
 # Shows all users (for testing only)
 @app.route('/users')

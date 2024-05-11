@@ -34,8 +34,8 @@ body {
 }
 
 .profile-pfp {
-    width: 30vh;
-    height: 30vh;
+    width: 20em;
+    height: 20em;
     display: block;
     overflow: hidden;
     border-radius: 50%;
@@ -52,4 +52,29 @@ body {
     left: 30%;
     right: 10%;
     top: 1em;
+}
+
+.indent-to-right-of-post {
+    position: absolute;
+    right: 1%;
+    height: 19%;
+}
+
+.indent-to-a-bit-right-of-post {
+    position: absolute;
+    right: 6%;
+    height: 19%;
+}
+
+.nav-user-pfp {
+    width: 2.5em;
+    height: 2.5em;
+    border-radius: 50%;
+    margin-right: 0.5vh;
+    object-fit: cover;
+}
+
+.search-btn-round {
+    border-radius: 25%;
+    margin-right: 3em;
 }

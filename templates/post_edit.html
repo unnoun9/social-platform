@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% include 'navbar.html' %}
+    {% include 'flashes.html' %}
+
+    <h1>{{ current_user.display_name }}'s post (edit)</h1>
+    <br>
+    
+    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            {{ form.title_f.label(class="form-label") }}
+            {{ form.title_f(class="form-control") }}
+            <br>
+            {{ form.details_f.label(class="form-label") }}
+            {{ form.details_f(class="form-control", rows=10) }}
+            <br>
+            {{ form.submit_f(class="btn btn-outline-danger") }}
+        </form>
+        <br>
+    </div>
+
+{% endblock %}
