@@ -5,7 +5,7 @@
     <h1>Sign up</h1>
     <hr>
     {% include 'flashes.html' %}
-    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded form-bg-dark" data-bs-theme="dark">
+    <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary">
         <form method="POST">
             {{ form.hidden_tag() }}
             {{ form.display_name_f.label(class="form-label") }}

@@ -4,6 +4,7 @@
 	{% include 'navbar.html' %}
     <h2>All Users</h2>
     <hr>
+
     <table class="table table-hover table-striped table-dark table-borderless table-font-size">
         <thead>
             <tr>
@@ -12,7 +13,6 @@
                 <th>Email address</th>
                 <th>Signup date</th>
                 <th>Acount status</th>
-                <th>Gender</th>
                 <th>About</th>
                 <th>Location</th>
                 <th>DOB</th>
@@ -27,13 +27,13 @@
                 <td>{{ user[2] }}</td>
                 <td>{{ user[4] }}</td>
                 <td>{{ user[5] }}</td>
-                <td>{{ user[7] }}</td>
-                <td class="text-break">{{ user[8] }}</td>
+                <td class="text-break">{{ user[7] }}</td>
+                <td>{{ user[8] }}</td>
                 <td>{{ user[9] }}</td>
                 <td>{{ user[10] }}</td>
-                <td>{{ user[11] }}</td>
-                <td><a href="{{ url_for('profile_view', user_id=user[0]) }}">View</a></td>
+                <td><a href="{{ url_for('profile_view', user_id=user[0]) }}" class="link-secondary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"">View</a></td>
             </tr>
         {% endfor %}
     </table>
+    
 {% endblock %}

@@ -7,8 +7,7 @@ CREATE TABLE user_accounts (
     hashed_password VARCHAR(255) NOT NULL,
     signup_date DATE NOT NULL,
     account_status VARCHAR(8) NOT NULL DEFAULT 'Active',
-    pfp_url VARCHAR(255),
-    gender VARCHAR(6),
+    pfp_url TEXT,
     about VARCHAR(500),
     location VARCHAR(50),
     date_of_birth DATE,
@@ -16,9 +15,8 @@ CREATE TABLE user_accounts (
     
     PRIMARY KEY(id),
     UNIQUE (display_name),
-    CHECK (gender IN ('Male', 'Female', 'Other')),
-    CHECK (account_status IN ('Active', 'Inactive', 'Deleted')),
-    CHECK (privacy IN ('Public', 'Private'))
+    CONSTRAINT chk_status CHECK (account_status IN ('Active', 'Inactive', 'Deleted')),
+    CONSTRAINT chk_privacy CHECK (privacy IN ('Public', 'Private'))
 );
 
 CREATE TABLE posts (
@@ -26,7 +24,7 @@ CREATE TABLE posts (
 	user_id INT NOT NULL,
     parent_id INT DEFAULT NULL,
     title VARCHAR(100) NOT NULL,
-    details VARCHAR(10000),
+    content VARCHAR(10000),
     date_created DATE NOT NULL,
     
     PRIMARY KEY(id),
@@ -39,7 +37,7 @@ CREATE TABLE posts (
 CREATE TABLE post_media (
 	id INT NOT NULL AUTO_INCREMENT,
     post_id INT NOT NULL,
-    url VARCHAR(255) NOT NULL,
+    url TEXT NOT NULL,
     
     PRIMARY KEY(id),
     FOREIGN KEY(post_id) REFERENCES posts(id)
@@ -74,7 +72,7 @@ CREATE TABLE endorsements (
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY(post_id) REFERENCES posts(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    CHECK (endorsement_type IN (-1, 1)),
+    CONSTRAINT chk_endorsement_type CHECK (endorsement_type IN (-1, 1)),
     UNIQUE (user_id, post_id)
 );
 
@@ -110,7 +108,7 @@ CREATE TABLE messages (
     id INT NOT NULL AUTO_INCREMENT,
     sender_id INT NOT NULL,
     receiver_id INT NOT NULL,
-    content TEXT NOT NULL,
+    content VARCHAR(5000) NOT NULL,
     time_sent DATETIME NOT NULL,
 
     PRIMARY KEY(id),
@@ -123,7 +121,7 @@ CREATE TABLE messages (
 CREATE TABLE message_media (
     id INT NOT NULL AUTO_INCREMENT,
     message_id INT NOT NULL,
-    url VARCHAR(255) NOT NULL,
+    url TEXT NOT NULL,
 
     PRIMARY KEY(id),
     FOREIGN KEY(message_id) REFERENCES messages(id)
@@ -148,7 +146,7 @@ CREATE TABLE notifications (
     sender_id INT NOT NULL,
     receiver_id INT NOT NULL,
     notification_type VARCHAR(20) NOT NULL,
-    content VARCHAR(50) NOT NULL,
+    content VARCHAR(100) NOT NULL,
     date_sent DATE NOT NULL,
 	
     PRIMARY KEY(id),
@@ -156,15 +154,16 @@ CREATE TABLE notifications (
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY(receiver_id) REFERENCES user_accounts(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    CHECK(notification_type IN ('message', 'share', 'request'))
+    CONSTRAINT chk_notification_type CHECK(notification_type IN ('Message', 'Share', 'Request'))
 );
 
 CREATE TABLE communities (
     id INT NOT NULL AUTO_INCREMENT,
     admin_id INT NOT NULL,
     title VARCHAR(30) NOT NULL,
-    description VARCHAR(255) NOT NULL,
+    description VARCHAR(500) NOT NULL,
     date_created DATE NOT NULL,
+    pfp_url TEXT,
 
     PRIMARY KEY(id),
     FOREIGN KEY(admin_id) REFERENCES user_accounts(id)

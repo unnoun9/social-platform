@@ -6,7 +6,7 @@
 
     <h1>{{ user["display_name"] }}'s profile</h1>
     <br>
-    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded pos-relative">
+    <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary position-relative">
         
         <div class="profile-pfp">
             {% if not user["pfp_url"] %}
@@ -16,26 +16,25 @@
             {% endif %}
         </div>
         <br>
-        <hr>
 
-        <div class="profile-about">
-            <h2>About</h2><hr>
-            {% if not user["about"] %}
-            <p class="text-muted fw-lighter">No bio yet</p>
-            {% else %}
-                <p>{{ user["about"] }}  </p>
-            {% endif %}
+        <div class="front-of-pfp">
+            <h2>Display name</h2>
+            <p>{{ user["display_name"] }}</p>
+            <hr>
+
+            <h2>Email</h2>
+            <p>{{ user["email_address"] }}</p>
+            <hr>
+            
+            <h2>Account created on</h2>
+            <p>{{ user["signup_date"] }}</p>
         </div>
         
-        <h2>Email</h2>
-        <p>{{ user["email_address"] }}</p>
-        <hr>
-
-        <h2>Gender</h2>
-        {% if not user["gender"] %}
-        <p class="text-muted fw-lighter">Not specified yet</p>
+        <h2>About</h2>
+        {% if not user["about"] %}
+        <p class="text-muted fw-lighter">No bio yet</p>
         {% else %}
-        <p>{{ user["gender"] }}</p>
+        <p class="alot-of-content">{{ user["about"] }} </p>
         {% endif %}
         <hr>
 
@@ -63,42 +62,40 @@
         {% endif %}
         <hr>
 
-        <h2>Account created on</h2>
-        <p>{{ user["signup_date"] }}</p>
-
     </div>
     
     <hr>
     <h1>{{ user["display_name"] }}'s Posts</h1>
     <br>
 
-    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded pos-relative">
+    <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary position-relative">
         
         <a href="{{ url_for('post_create') }}"><button class="btn btn-outline-danger">Create a new post</button></a>
         <hr><br>
         
         {% for post in user["posts"] %}
-        <div class="card hover-overlay shadow-1-strong rounded"">
+        <div class="card hover-overlay shadow-1-strong rounded">
+
             <div class="card-header">
-                {{ post[3] }}
-                <a class="btn btn-outline-secondary btn-sm indent-to-a-bit-right-of-post" href="{{ url_for('post_edit', post_id=post[0])}}">Edit</a>
-                <a class="btn btn-outline-secondary btn-sm indent-to-right-of-post" href="{{ url_for('post_view', post_id=post[0])}}">View</a>
+                <div class="alot-of-content">{{ post[3] }}</div>
+                <a class="btn btn-outline-secondary btn-sm indent-to-top-right-of-post" style="right: 4.7em;" href="{{ url_for('post_edit', post_id=post[0])}}">Edit</a>
+                <a class="btn btn-outline-secondary btn-sm indent-to-top-right-of-post" href="{{ url_for('post_view', post_id=post[0])}}">View</a>
             </div>
+
             <div class="card-body">
                 <blockquote class="blockquote mb-0">
                     {% if post[4] %}
-                    <p class="text-break text-truncate" style="max-width: 95%">{{ post[4] }}</p>
+                    <p class="text-break alot-of-content ellipsis">{{ post[4] }}</p>
                     {% else %}
-                    <p class="text-muted fw-lighter">No details entered yet</p>
+                    <p class="text-muted fw-lighter">No content entered yet</p>
                     {% endif %}
-                    <br>
                     <footer class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ post[5] }}</cite></footer>
                 </blockquote>
             </div>
+
         </div>
         <br>
         {% endfor %}
 
     </div>
-
 {% endblock %}

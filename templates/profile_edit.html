@@ -7,7 +7,7 @@
     <h1>{{ user["display_name"] }}'s profile (edit)</h1>
     <br>
 
-    <div class="shadow-sm p-3 mb-5 bg-body-tertiary rounded form-bg-dark" data-bs-theme="dark">
+    <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary">
         <form method="POST">
             {{ form.hidden_tag() }}
             {{ form.display_name_f.label(class="form-label") }}
@@ -21,9 +21,6 @@
             <br>
             {{ form.about_f.label(class="form-label") }}
             {{ form.about_f(class="form-control", rows=5) }}
-            <br>
-            {{ form.gender_f.label(class="form-label") }}
-            {{ form.gender_f(class="form-control") }}
             <br>
             {{ form.date_of_birth_f.label(class="form-label") }}
             {{ form.date_of_birth_f(class="form-control") }}

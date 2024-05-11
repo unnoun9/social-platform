@@ -5,7 +5,7 @@ from wtforms.widgets import TextArea
 
 # Sign up form class
 class SignupForm(FlaskForm):
-    display_name_f = StringField('Display name', validators=[DataRequired()])
+    display_name_f = StringField('Display name', validators=[DataRequired(), Length(min=2, max=50)])
     email_f = EmailField('Email', validators=[DataRequired()])
     password_f = PasswordField('Password', validators=[DataRequired()])
     password_confirm_f = PasswordField('Confirm Password', validators=[DataRequired(), Length(min=8, max=80)])
@@ -13,7 +13,7 @@ class SignupForm(FlaskForm):
 
 # Login form class
 class LoginForm(FlaskForm):
-    display_name_f = StringField('Display name', validators=[DataRequired(), Length(min=3, max=50)])
+    display_name_f = StringField('Display name', validators=[DataRequired(), Length(min=2, max=50)])
     password_f = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=80)])
     submit_f = SubmitField('Login')
 
@@ -23,21 +23,20 @@ class EditProfileForm(FlaskForm):
     email_f = EmailField('Email', validators=[DataRequired()])
     pfp_url_f = StringField('Profile picture URL')
     about_f = TextAreaField('About', widget=TextArea(), validators=[Length(min=0, max=500)])
-    gender_f = SelectField('Gender', choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')])
     date_of_birth_f = DateField('Date of Birth', validators=[Optional()])
     location_f = StringField('Location')
     privacy_f = SelectField('Account privacy', choices=[('Public', 'Public'), ('Private', 'Private')])
-    # TODO - Change password field
+    # TODO - Password change field
     submit_f = SubmitField('Save changes')
 
 # Post form class
 class PostForm(FlaskForm):
     title_f = StringField('Title', validators=[DataRequired(), Length(min=1, max=100)])
-    details_f = TextAreaField('Details', widget=TextArea(), validators=[Length(min=0, max=10000)])
+    contents_f = TextAreaField('Details', widget=TextArea(), validators=[Length(min=0, max=10000)])
     submit_f = SubmitField('Create post')
 
 # Post form class
 class EditPostForm(FlaskForm):
     title_f = StringField('Title', validators=[DataRequired(), Length(min=1, max=100)])
-    details_f = TextAreaField('Details', widget=TextArea(), validators=[Length(min=0, max=10000)])
+    contents_f = TextAreaField('Details', widget=TextArea(), validators=[Length(min=0, max=10000)])
     submit_f = SubmitField('Edit post')
