@@ -12,27 +12,6 @@ body {
     height: 1.5em;
 }
 
-.header-text {
-    font-size: 1.5em;
-}
-
-.alert {
-    font-size: 1em;
-    display: d-inline-block;
-}
-
-.table-font-size {
-    font-size: 1.3em;
-}
-
-.inline-display {
-    display: inline-block;
-}
-
-.pos-relative {
-    position: relative;
-}
-
 .profile-pfp {
     width: 17em;
     height: 17em;
@@ -66,8 +45,8 @@ body {
 }
 
 .nav-user-pfp {
-    width: 2.7em;
-    height: 2.7em;
+    width: 2.5em;
+    height: 2.5em;
     border-radius: 50%;
     margin-right: 0.5em;
     object-fit: cover;
@@ -88,5 +67,10 @@ body {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    -webkit-line-clamp: 10;
+    -webkit-line-clamp: 6;
+}
+
+.feed-user-pfp-name {
+    position: absolute;
+    bottom: 1.5em;
 }

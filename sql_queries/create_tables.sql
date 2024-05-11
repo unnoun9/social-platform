@@ -5,7 +5,7 @@ CREATE TABLE user_accounts (
     display_name VARCHAR(50) NOT NULL,
 	email_address VARCHAR(100) NOT NULL,
     hashed_password VARCHAR(255) NOT NULL,
-    signup_date DATE NOT NULL,
+    signup_date DATETIME NOT NULL,
     account_status VARCHAR(8) NOT NULL DEFAULT 'Active',
     pfp_url TEXT,
     about VARCHAR(500),
@@ -25,7 +25,7 @@ CREATE TABLE posts (
     parent_id INT DEFAULT NULL,
     title VARCHAR(100) NOT NULL,
     content VARCHAR(10000),
-    date_created DATE NOT NULL,
+    date_created DATETIME NOT NULL,
     
     PRIMARY KEY(id),
     FOREIGN KEY(user_id) REFERENCES user_accounts(id)
@@ -49,7 +49,7 @@ CREATE TABLE share_posts (
     post_id INT NOT NULL,
     sender_id INT NOT NULL,
     receiver_id INT NOT NULL,
-    share_time DATETIME NOT NULL,
+    date_shared DATETIME NOT NULL,
 
     PRIMARY KEY(id),
     FOREIGN KEY(post_id) REFERENCES posts(id)
@@ -65,7 +65,7 @@ CREATE TABLE endorsements (
     user_id INT NOT NULL,
     post_id INT NOT NULL,
     endorsement_type INT NOT NULL,
-	date_endorsed DATE NOT NULL,
+	date_endorsed DATETIME NOT NULL,
     
     PRIMARY KEY(id),
     FOREIGN KEY(user_id) REFERENCES user_accounts(id)
@@ -109,7 +109,7 @@ CREATE TABLE messages (
     sender_id INT NOT NULL,
     receiver_id INT NOT NULL,
     content VARCHAR(5000) NOT NULL,
-    time_sent DATETIME NOT NULL,
+    date_sent DATETIME NOT NULL,
 
     PRIMARY KEY(id),
     FOREIGN KEY(sender_id) REFERENCES user_accounts(id)
@@ -132,7 +132,7 @@ CREATE TABLE blocked_users (
     id INT NOT NULL AUTO_INCREMENT,
     blocker_id INT NOT NULL,
     blocked_id INT NOT NULL,
-    date_blocked DATE NOT NULL,
+    date_blocked DATETIME NOT NULL,
 
     PRIMARY KEY(id),
     FOREIGN KEY(blocker_id) REFERENCES user_accounts(id)
@@ -147,7 +147,7 @@ CREATE TABLE notifications (
     receiver_id INT NOT NULL,
     notification_type VARCHAR(20) NOT NULL,
     content VARCHAR(100) NOT NULL,
-    date_sent DATE NOT NULL,
+    date_notified DATETIME NOT NULL,
 	
     PRIMARY KEY(id),
     FOREIGN KEY(sender_id) REFERENCES user_accounts(id)
@@ -162,7 +162,7 @@ CREATE TABLE communities (
     admin_id INT NOT NULL,
     title VARCHAR(30) NOT NULL,
     description VARCHAR(500) NOT NULL,
-    date_created DATE NOT NULL,
+    date_created DATETIME NOT NULL,
     pfp_url TEXT,
 
     PRIMARY KEY(id),
@@ -173,7 +173,7 @@ CREATE TABLE communities (
 CREATE TABLE community_members (
     community_id INT NOT NULL,
     member_id INT NOT NULL,
-    date_joined DATE NOT NULL,
+    date_joined DATETIME NOT NULL,
 
     PRIMARY KEY(community_id, member_id),
     FOREIGN KEY(community_id) REFERENCES communities(id)

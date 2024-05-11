@@ -11,10 +11,12 @@
         <div class="card hover-overlay shadow-1-strong rounded">
             <div class="card-header">
                 <div class="alot-of-content">{{ post[3] }}</div>
-                {% if current_user.is_authenticated %}
+                {% if current_user.id == user[0] %}
                 <a class="btn btn-outline-danger btn-sm indent-to-top-right-of-post" href="{{ url_for('post_delete', post_id=post[0])}}">Delete</a>
-                {% endif %}
                 <a class="btn btn-outline-secondary btn-sm indent-to-top-right-of-post" style="right: 5.3em;" href="{{ url_for('post_edit', post_id=post[0])}}">Edit</a>
+                {% else %}
+                <a class="btn btn-outline-secondary btn-sm indent-to-top-right-of-post" 1" href="{{ url_for('post_edit', post_id=post[0])}}">Edit</a>
+                {% endif %}
             </div>
 
             <div class="card-body">
@@ -27,7 +29,7 @@
                     <br>
                     <footer class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ post[5] }}</cite></footer>
                     <br>
-                    <footer class="blockquote-footer indent-to-right-of-post">Created by: <a href="{{ url_for('profile_view', user_id=user[0]) }}">{{ user[1] }}</a></footer>
+                    <footer class="blockquote-footer indent-to-right-of-post">Created by: <a href="{{ url_for('profile_view', user_id=user[0]) }}" class="link-secondary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">{{ user[1] }}</a></footer>
                 </blockquote>
             </div>
         </div>

@@ -4,6 +4,37 @@
 	{% include 'navbar.html' %}
 	{% include 'flashes.html' %}
 
-	
+	<div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary">
+		
+		{% for feed in all_feed %}
+        <div class="card hover-overlay shadow-1-strong rounded">
+            <div class="card-header">
+                <div class="alot-of-content">{{ feed[2] }}</div>
+                <a class="btn btn-outline-secondary btn-sm indent-to-top-right-of-post" href="{{ url_for('post_view', post_id=feed[0])}}">View</a>
+            </div>
+
+            <div class="card-body">
+                <blockquote class="blockquote mb-0">
+                    {% if feed[3] %}
+                    <p class="text-break alot-of-content ellipsis" style="max-height:none;">{{ feed[3] }}</p>
+                    {% else %}
+                    <p class="text-muted fw-lighter">No content entered yet</p>
+                    {% endif %}
+                    <hr><br>
+                    <footer class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ feed[4] }}</cite></footer>
+                    <br>
+                </blockquote>
+				
+				<a href="{{ url_for('profile_view', user_id=feed[5]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
+					<div class="feed-user-pfp-name">
+						<img src="{{ feed[8] }}" class="nav-user-pfp" alt="{{ feed[6] }}'s profile picture">
+						<strong>{{ feed[6] }}</strong>
+					</div>
+				</a>
+            </div>
+        </div><br><br>
+		{% endfor %}
+
+    </div>
 
 {% endblock %}	
