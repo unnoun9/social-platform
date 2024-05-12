@@ -74,3 +74,11 @@ body {
     position: absolute;
     bottom: 1.5em;
 }
+
+.search-user-about {
+    white-space: pre-wrap;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}

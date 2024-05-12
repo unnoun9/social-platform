@@ -25,16 +25,16 @@
                     <br>
                 </blockquote>
 				
-				<a href="{{ url_for('profile_view', user_id=feed[5]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
-					<div class="feed-user-pfp-name">
+                <div class="feed-user-pfp-name">
+				    <a href="{{ url_for('profile_view', user_id=feed[5]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
                         {% if not feed[8] %}
                         <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ feed[6] }}'s profile picture">
                         {% else %}
 						<img src="{{ feed[8] }}" class="nav-user-pfp" alt="{{ feed[6] }}'s profile picture">
                         {% endif %}
-						<strong>{{ feed[6] }}</strong>
-					</div>
-				</a>
+						<strong>@{{ feed[6] }}</strong>
+                    </a>
+                </div>
             </div>
         </div><br><br>
 		{% endfor %}

@@ -14,8 +14,6 @@
                 {% if current_user.id == user[0] %}
                 <a class="btn btn-outline-danger btn-sm indent-to-top-right-of-post" href="{{ url_for('post_delete', post_id=post[0])}}">Delete</a>
                 <a class="btn btn-outline-secondary btn-sm indent-to-top-right-of-post" style="right: 5.3em;" href="{{ url_for('post_edit', post_id=post[0])}}">Edit</a>
-                {% else %}
-                <a class="btn btn-outline-secondary btn-sm indent-to-top-right-of-post" 1" href="{{ url_for('post_edit', post_id=post[0])}}">Edit</a>
                 {% endif %}
             </div>
 

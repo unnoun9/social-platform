@@ -40,3 +40,8 @@ class EditPostForm(FlaskForm):
     title_f = StringField('Title', validators=[DataRequired(), Length(min=1, max=100)])
     contents_f = TextAreaField('Details', widget=TextArea(), validators=[Length(min=0, max=10000)])
     submit_f = SubmitField('Edit post')
+
+# Seach form class
+class SearchForm(FlaskForm):
+    searched_f = StringField('Searched', validators=[DataRequired()])
+    submit_f = SubmitField('Search')

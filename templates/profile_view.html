@@ -15,25 +15,34 @@
             {% endif %}
         </div>
         <br>
-        
+
         {% if user["privacy"] == 'Private' %}
-        <hr>
-        <h5 class="text-danger">This user has set their profile to private</h5>
-        <div class="front-of-pfp">
-            <h2>Display name</h2>
-            <p>{{ user["display_name"] }}</p>
-            <hr>
+            <div class="front-of-pfp">
+                <h2>Display name</h2>
+                <p>{{ user["display_name"] }}</p>
+                <hr>
 
-            <h2>Email</h2>
-            <p>{{ user["email_address"] }}</p>
-            <hr>
+                <h2>Account created on</h2>
+                <p>{{ user["signup_date"] }}</p>
+                <hr>
 
-            <h2>Account created on</h2>
-            <p>{{ user["signup_date"] }}</p>
-        </div>
+                <h5 class="text-danger">This user has set their profile to private</h5>
+            </div>
         {% else %}
+            <div class="front-of-pfp">
+                <h2>Display name</h2>
+                <p>{{ user["display_name"] }}</p>
+                <hr>
 
-            <h2>About</h2><hr>
+                <h2>Email</h2>
+                <p>{{ user["email_address"] }}</p>
+                <hr>
+
+                <h2>Account created on</h2>
+                <p>{{ user["signup_date"] }}</p>
+            </div>
+
+            <h2>About</h2>
             {% if not user["about"] %}
             <p class="text-muted fw-lighter">No bio yet</p>
             {% else %}

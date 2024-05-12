@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% include 'navbar.html' %}
+    {% include 'flashes.html' %}
+
+    {% if not users and not posts %}
+    <h1>No search results found for :  "{{ query }}"</h1>
+    {% else %}
+    <h1>Results for :  "{{ query }}"</h1><hr><br>
+
+        {% if posts and users %}
+        <h5>Jump to <a href="#u" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">users.</a></h5>
+        {% endif %}
+
+        {% if posts %}
+        <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary">
+            <h2 id="p">Posts</h2><hr>
+            {% for post in posts %}
+            <div class="card hover-overlay shadow-1-strong rounded">
+                <div class="card-header">
+                    <div class="alot-of-content">{{ post[2] }}</div>
+                    <a class="btn btn-outline-secondary btn-sm indent-to-top-right-of-post" href="{{ url_for('post_view', post_id=post[0])}}">View</a>
+                </div>
+
+                <div class="card-body">
+                    <blockquote class="blockquote mb-0">
+                        {% if post[3] %}
+                        <p class="text-break alot-of-content ellipsis" style="max-height:none;">{{ post[3] }}</p>
+                        <hr>
+                        {% endif %}
+                        <br>
+                        <footer class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ post[4] }}</cite></footer>
+                        <br>
+                    </blockquote>
+                    
+                    <div class="feed-user-pfp-name">
+                        <a href="{{ url_for('profile_view', user_id=post[5]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
+                            {% if not post[8] %}
+                            <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ post[6] }}'s profile picture">
+                            {% else %}
+                            <img src="{{ post[8] }}" class="nav-user-pfp" alt="{{ post[6] }}'s profile picture">
+                            {% endif %}
+                            <strong>@{{ post[6] }}</strong>
+                        </a>
+                    </div>
+                </div>
+            </div><br><br>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if posts and users %}
+        <h5>Jump to <a href="#p" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">posts.</a></h5>
+        {% endif %}
+
+        {% if users %}
+        <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary">
+            <h2 id="u">Users</h2><hr>
+            {% for user in users %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="posts-user-pfp-name position-relative">
+                            <a href="{{ url_for('profile_view', user_id=user[0]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
+                            {% if not user[6] %}
+                            <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ user[1] }}'s profile picture">
+                            {% else %}
+                            <img src="{{ user[6] }}" class="nav-user-pfp" alt="{{ user[1] }}'s profile picture">
+                            {% endif %}
+                            <strong>@{{ user[1] }}</strong>
+                        </a>
+                        {% if user[7] and not user[7] == "" %}
+                        <br><hr>
+                        <div class="search-user-about text-secondary">{{ user[7] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <br>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endif %}
+
+{% endblock %}
