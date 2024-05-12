@@ -18,6 +18,7 @@
                 <th>DOB</th>
                 <th>Privacy</th>
                 <th>Link</th>
+                <th>Delete</th>
             </tr>   
         </thead>
         {% for user in all_users %}
@@ -32,6 +33,7 @@
                 <td>{{ user[9] }}</td>
                 <td>{{ user[10] }}</td>
                 <td><a href="{{ url_for('profile_view', user_id=user[0]) }}" class="link-secondary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"">View</a></td>
+                <td><a href="{{ url_for('users_delete', user_id=user[0]) }}" class="link-secondary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"">Delete</a></td>
             </tr>
         {% endfor %}
     </table>

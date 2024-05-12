@@ -9,6 +9,7 @@ from forms import SignupForm, LoginForm, EditProfileForm, PostForm, EditPostForm
 
 # TODO - Make a different py file for all queries - Store them in a dictionary and call them as needed
 
+
 # Flask app instance
 app = Flask(__name__)
 # Secret key for CSRF protection
@@ -304,6 +305,14 @@ def profile_view(user_id):
         flash("An error occurred while fetching the user's profile.", "error")
         return redirect(url_for('index'))
 
+# Delete a user account (soft delete - account_status = 'Deleted')
+@app.route('/profile/delete/<int:user_id>')
+@login_required
+def profile_delete(user_id):
+    # TODO - Add a confirmation dialog before deleting the account???
+    pass 
+
+
 # Create a post
 @app.route('/post/create', methods=['GET','POST'])
 @login_required
@@ -422,13 +431,12 @@ def post_delete(post_id):
         g.cursor.execute(query, (post_id,))
         g.db.commit()
         flash("Post deleted successfully.")
-        return redirect(url_for('profile'))
     except Exception as e:
         print(e)
         flash("An error occurred while deleting the post.", "error")
-        return redirect(url_for('profile'))
+    return redirect(url_for('profile'))
 
-# Shows all users (for testing only)
+# Temporary route to shows all users (for testing purposes)
 @app.route('/users')
 def users():
     try:
@@ -440,6 +448,20 @@ def users():
         print(e)
         flash("An error occurred while fetching the users.", "error")
         return redirect(url_for('index'))
+
+# Temporary route to delete users (for testing purposes)
+@app.route('/users/delete/<int:user_id>')
+def users_delete(user_id):
+    try:
+        query = 'DELETE FROM user_accounts WHERE id = %s'
+        g.cursor.execute(query, (user_id,))
+        g.db.commit()
+        flash("User deleted successfully.")
+    except Exception as e:
+        print(e)
+        flash("An error occurred while deleting the user.", "error")
+    return redirect(url_for('users'))
+
 
 # Error handlers
 @app.errorhandler(404)
