@@ -95,12 +95,12 @@ CREATE TABLE endorsements (
 -- );
 
 CREATE TABLE followers (
-	follower_user_id INT NOT NULL,
-    followed_user_id INT NOT NULL,
+	follower_id INT NOT NULL,
+    followed_id INT NOT NULL,
     
-    FOREIGN KEY (follower_user_id) REFERENCES user_accounts(id)
+    FOREIGN KEY (follower_id) REFERENCES user_accounts(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (followed_user_id) REFERENCES user_accounts(id)
+    FOREIGN KEY (followed_id) REFERENCES user_accounts(id)
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 

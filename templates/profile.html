@@ -29,6 +29,9 @@
             <h2>Account created on</h2>
             <p>{{ user["signup_date"] }}</p>
         </div>
+
+        <!-- TODO - DB + Jinja logic... -->
+        <p class="text-muted fw-lighter followers-profile">{{ user['followers'] }} followers</p>
         
         <h2>About</h2>
         {% if not user["about"] %}

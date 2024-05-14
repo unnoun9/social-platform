@@ -240,6 +240,13 @@ def profile():
         """
         g.cursor.execute(query, (current_user.id,))
         user_info["posts"] = g.cursor.fetchall()
+        # Get the current logged in user's follower count
+        query = """
+            SELECT COUNT(*) FROM followers
+            WHERE followed_id = %s
+        """
+        g.cursor.execute(query, (current_user.id,))
+        user_info["followers"] = g.cursor.fetchone()[0]
         return render_template('profile.html', user=user_info)
     except Exception as e:
         print(e)
@@ -324,6 +331,7 @@ def profile_view(user_id):
             flash("User not found.", "error")
             return redirect(request.referrer or url_for('index'))
         user_info = {
+            "id": user_id,
             "display_name": user_details[1],
             "email_address": user_details[2],
             "signup_date": user_details[4],
@@ -351,6 +359,24 @@ def profile_view(user_id):
         """
         g.cursor.execute(query, (user_id,))
         user_info["posts"] = g.cursor.fetchall()
+        # Get the user's follower count
+        query = """
+            SELECT COUNT(*) FROM followers
+            WHERE followed_id = %s
+        """
+        g.cursor.execute(query, (user_id,))
+        user_info["followers"] = g.cursor.fetchone()[0]
+        # Check if the user is following the user whose profile is being viewed
+        if current_user.is_authenticated:
+            query = """
+                SELECT * FROM followers
+                WHERE follower_id = %s AND followed_id = %s
+            """
+            g.cursor.execute(query, (current_user.id, user_id))
+            if g.cursor.fetchone():
+                user_info["is_already_followed"] = True
+            else:
+                user_info["is_already_followed"] = False
         return render_template('profile_view.html', user=user_info)
     except Exception as e:
         print(e)
@@ -487,6 +513,37 @@ def post_delete(post_id):
         print(e)
         flash("An error occurred while deleting the post.", "error")
         return redirect(request.referrer or url_for('index'))
+
+# Route to allow users to follow other users
+@app.route('/follow/<int:followed_id>', methods=['POST'])
+@login_required
+def follow(followed_id):
+    try:
+        follower_id = current_user.id
+        if follower_id == followed_id:
+            flash("You cannot follow yourself.")
+            return Response(status=204)
+        query = """
+            SELECT * FROM followers
+            WHERE follower_id = %s AND followed_id = %s
+        """
+        g.cursor.execute(query, (follower_id, followed_id))
+        if g.cursor.fetchone():
+            # flash("You are already following this user.")
+            return Response(status=204)
+        else:
+            query = """
+                INSERT INTO followers (follower_id, followed_id)
+                VALUES (%s, %s)
+            """
+            g.cursor.execute(query, (follower_id, followed_id))
+            g.db.commit()
+            return redirect(request.referrer or url_for('index'))
+    except Exception as e:
+        print(e)
+        flash("An error occurred while trying to follow the user.", "error")
+        return Response(status=500)
+        
 
 # Temporary route to shows all users (for testing purposes)
 @app.route('/users')
