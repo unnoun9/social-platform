@@ -520,17 +520,18 @@ def post_delete(post_id):
 def follow(followed_id):
     try:
         follower_id = current_user.id
+        # Don't allow the user to follow themselves lol
         if follower_id == followed_id:
-            flash("You cannot follow yourself.")
             return Response(status=204)
         query = """
             SELECT * FROM followers
             WHERE follower_id = %s AND followed_id = %s
         """
         g.cursor.execute(query, (follower_id, followed_id))
+        # Don't let the user follow a user if they are already following them
         if g.cursor.fetchone():
-            # flash("You are already following this user.")
             return Response(status=204)
+        # Follow the user
         else:
             query = """
                 INSERT INTO followers (follower_id, followed_id)
@@ -543,7 +544,41 @@ def follow(followed_id):
         print(e)
         flash("An error occurred while trying to follow the user.", "error")
         return Response(status=500)
+    
+# Route to allow users to unfollow other users
+@app.route('/unfollow/<int:followed_id>', methods=['POST'])
+@login_required
+def unfollow(followed_id):
+    try:
+        follower_id = current_user.id
+        # Don't allow the user to unfollow themselves lol
+        if follower_id == followed_id:
+            return Response(status=204)
+        query = """
+            SELECT * FROM followers
+            WHERE follower_id = %s AND followed_id = %s
+        """
+        g.cursor.execute(query, (follower_id, followed_id))
+        # Don't let the user unfollow a user if they are not following them
+        if not g.cursor.fetchone():
+            return Response(status=204)
+        # Unfollow the user
+        else:
+            query = """
+                DELETE FROM followers
+                WHERE follower_id = %s AND followed_id = %s
+            """
+            g.cursor.execute(query, (follower_id, followed_id))
+            g.db.commit()
+            return redirect(request.referrer or url_for('index'))
+    except Exception as e:
+        print(e)
+        flash("An error occurred while trying to unfollow the user.", "error")
+        return Response(status=500)
         
+
+
+
 
 # Temporary route to shows all users (for testing purposes)
 @app.route('/users')
