@@ -128,6 +128,9 @@ def search():
 @app.route('/signup', methods=['GET','POST'])
 def signup():
     try:
+        # Do not let a logged in user to access signup route
+        if current_user.is_authenticated:
+            return redirect(url_for('profile'))
         form = SignupForm()
         if form.validate_on_submit():
             # Check if the user with the same display name exists or not
@@ -161,6 +164,9 @@ def signup():
 @app.route('/login', methods=['GET','POST'])
 def login():
     try:
+        # Do not let a logged in user to access login route
+        if current_user.is_authenticated:
+            return redirect(url_for('profile'))
         form = LoginForm()
         if form.validate_on_submit():
             # Check if the user exists and the password is correct
