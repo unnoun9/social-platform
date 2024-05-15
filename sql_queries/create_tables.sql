@@ -44,6 +44,22 @@ CREATE TABLE post_media (
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+CREATE TABLE endorsements (
+	id INT NOT NULL AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    post_id INT NOT NULL,
+    endorsement_type VARCHAR(12) NOT NULL,
+	date_endorsed DATETIME NOT NULL,
+    
+    PRIMARY KEY(id),
+    FOREIGN KEY(user_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY(post_id) REFERENCES posts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT chk_endorsement_type CHECK (endorsement_type IN ("Condemnation", "Endorsement")),
+    UNIQUE (user_id, post_id)
+);
+
 CREATE TABLE share_posts (
     id INT NOT NULL AUTO_INCREMENT,
     post_id INT NOT NULL,
@@ -58,22 +74,6 @@ CREATE TABLE share_posts (
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY(receiver_id) REFERENCES user_accounts(id)
         ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-CREATE TABLE endorsements (
-	id INT NOT NULL AUTO_INCREMENT,
-    user_id INT NOT NULL,
-    post_id INT NOT NULL,
-    endorsement_type INT NOT NULL,
-	date_endorsed DATETIME NOT NULL,
-    
-    PRIMARY KEY(id),
-    FOREIGN KEY(user_id) REFERENCES user_accounts(id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY(post_id) REFERENCES posts(id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT chk_endorsement_type CHECK (endorsement_type IN (-1, 1)),
-    UNIQUE (user_id, post_id)
 );
 
 -- CREATE TABLE tags (

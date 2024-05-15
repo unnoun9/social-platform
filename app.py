@@ -431,6 +431,31 @@ def post_view(post_id):
         if not post:
             flash("Post not found.", "error")
             return redirect(url_for('index'))
+        # Get the endorsement and condemnation count of the post
+        query = """
+            SELECT COUNT(*) FROM endorsements
+            WHERE post_id = %s AND endorsement_type = 'Endorsement'
+        """
+        g.cursor.execute(query, (post_id,))
+        post_endorsements = g.cursor.fetchone()[0]
+        query = """
+            SELECT COUNT(*) FROM endorsements
+            WHERE post_id = %s AND endorsement_type = 'Condemnation'
+        """
+        g.cursor.execute(query, (post_id,))
+        post_condemnations = g.cursor.fetchone()[0]
+        # Check if the user has already endorsed or condemned the post
+        if current_user.is_authenticated:
+            query = """
+                SELECT * FROM endorsements
+                WHERE user_id = %s AND post_id = %s
+            """
+            g.cursor.execute(query, (current_user.id, post_id))
+            endorsement = g.cursor.fetchone()
+            if endorsement:
+                user_endorsement = endorsement[3]
+            else:
+                user_endorsement = None
         # Get the privacy of the user who created the post and use that accordingly
         query = 'SELECT * FROM user_accounts WHERE id = %s'
         g.cursor.execute(query, (post[1],))
@@ -443,7 +468,7 @@ def post_view(post_id):
             else:
                 flash("The owner of this post has a private account. You cannot view this post.")
                 return redirect(request.referrer or url_for('index'))
-        return render_template('post_view.html', post=post, user=user)
+        return render_template('post_view.html', post=post, user=user, post_endorsements=post_endorsements, post_condemnations=post_condemnations, user_endorsement=user_endorsement)
     except Exception as e:
         print(e)
         flash("An error occurred while fetching the post.", "error")
@@ -514,8 +539,55 @@ def post_delete(post_id):
         flash("An error occurred while deleting the post.", "error")
         return redirect(request.referrer or url_for('index'))
 
+# Route to 'endorse' or 'condemn' a post
+# CONDEMN IS NOT WORKING - 404 error...
+@app.route('/endorse/<int:post_id>/<string:endorsement_type>', methods=['GET', 'POST'])
+@login_required
+def endorse(post_id, endorsement_type):
+    try:
+        # Check if endorsement_type is valid
+        if endorsement_type not in ['Condemnation', 'Endorsement']:
+            return redirect(request.referrer or url_for('index'))
+        # Check if the user has already endorsed this post
+        query = """
+            SELECT * FROM endorsements
+            WHERE user_id = %s AND post_id = %s
+        """
+        g.cursor.execute(query, (current_user.id, post_id))
+        endorsement = g.cursor.fetchone()
+        # Update the endorsement type if it already exists and is different from the new endorsement type
+        if endorsement and endorsement[3] != endorsement_type:
+            query = """
+                UPDATE endorsements
+                SET endorsement_type = %s, date_endorsed = NOW()
+                WHERE id = %s
+            """
+            g.cursor.execute(query, (endorsement_type, endorsement[0]))
+        # Remove endorsement if already exists 
+        elif endorsement and endorsement[3] == endorsement_type:
+            query = """
+                DELETE FROM endorsements
+                WHERE id = %s
+            """
+            g.cursor.execute(query, (endorsement[0],))
+        # Insert a new endorsement record if it doesn't exist
+        elif not endorsement:
+            query = """
+                INSERT INTO endorsements (user_id, post_id, endorsement_type, date_endorsed)
+                VALUES (%s, %s, %s, NOW())
+            """
+            g.cursor.execute(query, (current_user.id, post_id, endorsement_type))
+        g.db.commit()
+        return redirect(request.referrer or url_for('index'))
+    except Exception as e:
+        g.db.rollback()
+        print(e)
+        flash("An error occurred while recording the endorsement.", "error")
+        return redirect(request.referrer or url_for('index'))
+
+
 # Route to allow users to follow other users
-@app.route('/follow/<int:followed_id>', methods=['POST'])
+@app.route('/follow/<int:followed_id>')#, methods=['POST'])
 @login_required
 def follow(followed_id):
     try:
@@ -546,7 +618,7 @@ def follow(followed_id):
         return Response(status=500)
     
 # Route to allow users to unfollow other users
-@app.route('/unfollow/<int:followed_id>', methods=['POST'])
+@app.route('/unfollow/<int:followed_id>')#, methods=['POST'])
 @login_required
 def unfollow(followed_id):
     try:

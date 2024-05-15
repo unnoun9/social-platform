@@ -42,16 +42,11 @@
                 <p>{{ user["signup_date"] }}</p>
             </div>
 
-            <!-- TODO - DB + Jinja logic... -->
             <p class="text-muted fw-lighter followers-profile-view">{{ user['followers'] }} followers</p>
             {% if current_user.is_authenticated and not user['is_already_followed'] %}
-            <form action="{{ url_for('follow', followed_id=user['id']) }}" method="POST">
-                <button type="submit" class="btn btn-outline-secondary btn-sm follow-btn">Follow</button>
-            </form>
+            <a href="{{ url_for('follow', followed_id=user['id']) }}" type="submit" class="btn btn-outline-secondary btn-sm follow-btn">Follow</a>
             {% elif current_user.is_authenticated and user['is_already_followed']%}
-            <form action="{{ url_for('unfollow', followed_id=user['id']) }}" method="POST">
-                <button type="submit" class="btn btn-outline-secondary btn-sm follow-btn">Unfollow</button>
-            </form>
+            <a href="{{ url_for('unfollow', followed_id=user['id']) }}" type="submit" class="btn btn-outline-secondary btn-sm follow-btn">Unfollow</a>
             {% endif %}
 
             <h2>About</h2>

@@ -25,9 +25,21 @@
                     <p class="text-muted fw-lighter">No content entered yet</p>
                     {% endif %}
                     <br>
-                    <footer class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ post[5] }}</cite></footer>
                     <br>
-                    <footer class="blockquote-footer indent-to-right-of-post">Created by: <a href="{{ url_for('profile_view', user_id=user[0]) }}" class="link-secondary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">{{ user[1] }}</a></footer>
+                    <div class="blockquote-footer">{{ post_endorsements }} endorsements</div>
+                    <div class="blockquote-footer">{{ post_condemnations }} condemnations</div>
+                    {% if user_endorsement == 'Endorsement' %}
+                        <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Endorsement') }}" class="btn btn-danger">Endorse</a>
+                        <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Condemnation') }}" class="btn btn-outline-secondary">Condemn</a>
+                    {% elif user_endorsement == 'Condemnation' %}
+                        <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Endorsement') }}" class="btn btn-outline-danger">Endorse</a>
+                        <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Condemnation') }}" class="btn btn-secondary">Condemn</a>
+                    {% else %}
+                        <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Endorsement') }}" class="btn btn-outline-danger">Endorse</a>
+                        <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Condemnation') }}" class="btn btn-outline-secondary">Condemn</a>
+                    {% endif %}
+                    <div class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ post[5] }}</cite></div><br><br>
+                    <div class="blockquote-footer indent-to-right-of-post">Created by: <a href="{{ url_for('profile_view', user_id=user[0]) }}" class="link-secondary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">{{ user[1] }}</a></div>
                 </blockquote>
             </div>
         </div>
