@@ -22,7 +22,6 @@ CREATE TABLE user_accounts (
 CREATE TABLE posts (
 	id INT NOT NULL AUTO_INCREMENT,
 	user_id INT NOT NULL,
-    parent_id INT DEFAULT NULL,
     title VARCHAR(100) NOT NULL,
     content VARCHAR(10000),
     date_created DATETIME NOT NULL,
@@ -31,6 +30,23 @@ CREATE TABLE posts (
     FOREIGN KEY(user_id) REFERENCES user_accounts(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY(parent_id) REFERENCES posts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE comments (
+    id INT NOT NULL AUTO_INCREMENT,
+    post_id INT NOT NULL,
+    user_id INT NOT NULL,
+    parent_id INT DEFAULT NULL,
+    content VARCHAR(1000) NOT NULL,
+    date_created DATETIME NOT NULL,
+
+    PRIMARY KEY(id),
+    FOREIGN KEY(post_id) REFERENCES posts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY(user_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY(parent_id) REFERENCES comments(id)
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -181,3 +197,11 @@ CREATE TABLE community_members (
     FOREIGN KEY(member_id) REFERENCES user_accounts(id)
         ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+
+<form method="POST" action="{{ url_for('comment_create', post_id=post[0]) }}">
+                    <div class="form-group">
+                        <label for="comment">Comment</label>
+                        <textarea class="form-control" id="comment" name="comment" rows="3"></textarea>
+                    </div>
+                </form>

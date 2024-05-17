@@ -4,10 +4,11 @@ from credentials import credentials
 from flask import Flask, Response, g, render_template, redirect, request, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import SignupForm, LoginForm, EditProfileForm, PostForm, EditPostForm, SearchForm
+from forms import SignupForm, LoginForm, EditProfileForm, PostForm, EditPostForm, SearchForm, CommentForm
 
 
 # TODO - Make a different py file for all queries - Store them in a dictionary and call them as needed
+# TODO - Add post comments / replies
 
 
 # Flask app instance
@@ -73,9 +74,8 @@ def pass_search_form():
 # Index
 @app.route('/')
 def index():
-    # TODO - Fetch posts from all users and display them and shit
     query = """
-        SELECT P.id, P.parent_id, P.title, P.content, P.date_created,
+        SELECT P.id, P.title, P.content, P.date_created,
         U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
         FROM posts P
         JOIN user_accounts U ON P.user_id = U.id
@@ -106,7 +106,7 @@ def search():
             g.cursor.execute(query, ('%' + form.searched_f.data + '%',))
             users = g.cursor.fetchall()
             query = """
-                SELECT P.id, P.parent_id, P.title, P.content, P.date_created,
+                SELECT P.id, P.title, P.content, P.date_created,
                 U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
                 FROM posts P
                 JOIN user_accounts U ON P.user_id = U.id
@@ -420,8 +420,8 @@ def post_create():
         flash("An error occurred while creating the post.", "error")
         return redirect(request.referrer or url_for('index'))
 
-# Show a post
-@app.route('/post/<int:post_id>')
+# View a post
+@app.route('/post/<int:post_id>', methods=['GET', 'POST'])
 def post_view(post_id):
     try:
         # Get the post details
@@ -456,6 +456,38 @@ def post_view(post_id):
                 user_endorsement = endorsement[3]
             else:
                 user_endorsement = None
+        # The comment form
+        form = CommentForm()
+        # If form is submitted and the user is logged in, insert a new comment into the db
+        if current_user.is_authenticated and form.validate_on_submit():
+            query = """
+                INSERT INTO comments (post_id, user_id, content, date_created)
+                VALUES (%s, %s, %s, NOW())
+            """
+            print(query) # the code never reaches here... why?
+            g.cursor.execute(query, (post_id, current_user.id, form.contents_f.data))
+            g.db.commit()
+            form.contents_f.data = ""
+            flash("Comment posted successfully.")
+            return redirect(request.referrer or url_for('index'))
+        # Get the comments on the post if any
+        query = """
+            SELECT C.id, C.content, C.date_created,
+            U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
+            FROM comments C
+            JOIN user_accounts U ON C.user_id = U.id
+            WHERE C.post_id = %s
+            ORDER BY C.date_created DESC
+        """
+        g.cursor.execute(query, (post_id,))
+        post_comments = g.cursor.fetchall()
+        # Get the number of comments on the post
+        query = """
+            SELECT COUNT(*) FROM comments
+            WHERE post_id = %s
+        """
+        g.cursor.execute(query, (post_id,))
+        comment_count = g.cursor.fetchone()[0]
         # Get the privacy of the user who created the post and use that accordingly
         query = 'SELECT * FROM user_accounts WHERE id = %s'
         g.cursor.execute(query, (post[1],))
@@ -468,7 +500,10 @@ def post_view(post_id):
             else:
                 flash("The owner of this post has a private account. You cannot view this post.")
                 return redirect(request.referrer or url_for('index'))
-        return render_template('post_view.html', post=post, user=user, post_endorsements=post_endorsements, post_condemnations=post_condemnations, user_endorsement=user_endorsement)
+        if current_user.is_authenticated:
+            return render_template('post_view.html', post=post, user=user, post_endorsements=post_endorsements, post_condemnations=post_condemnations, user_endorsement=user_endorsement, form=form, post_comments=post_comments, comment_count=comment_count)
+        else:
+            return render_template('post_view.html', post=post, user=user, post_endorsements=post_endorsements, post_condemnations=post_condemnations, form=form, post_comments=post_comments, comment_count=comment_count)
     except Exception as e:
         print(e)
         flash("An error occurred while fetching the post.", "error")
@@ -539,8 +574,7 @@ def post_delete(post_id):
         flash("An error occurred while deleting the post.", "error")
         return redirect(request.referrer or url_for('index'))
 
-# Route to 'endorse' or 'condemn' a post
-# CONDEMN IS NOT WORKING - 404 error...
+# 'endorse' or 'condemn' a post
 @app.route('/endorse/<int:post_id>/<string:endorsement_type>', methods=['GET', 'POST'])
 @login_required
 def endorse(post_id, endorsement_type):
@@ -584,10 +618,37 @@ def endorse(post_id, endorsement_type):
         print(e)
         flash("An error occurred while recording the endorsement.", "error")
         return redirect(request.referrer or url_for('index'))
-
+    
+# Comment on a post
+@app.route('/comment/<int:post_id>')#, methods=['POST'])
+@login_required
+def comment(post_id):
+    # try:
+    #     form = CommentForm()
+    #     # Get the post details
+    #     query = 'SELECT * FROM posts WHERE id = %s'
+    #     g.cursor.execute(query, (post_id,))
+    #     post = g.cursor.fetchone()
+    #     # Check if the post exists
+    #     if not post:
+    #         flash("Post not found.", "error")
+    #         return redirect(request.referrer or url_for('index'))
+    #     # Insert the comment into the database
+    #     query = """
+    #         INSERT INTO comments (user_id, post_id, comment, date_commented)
+    #         VALUES (%s, %s, %s, NOW())
+    #     """
+    #     g.cursor.execute(query, (current_user.id, post_id, form.content_f.data))
+    #     g.db.commit()
+    #     return redirect(request.referrer or url_for('index'))
+    # except Exception as e:
+    #     print(e)
+    #     flash("An error occurred while commenting on the post.", "error")
+    #     return redirect(request.referrer or url_for('index'))
+    pass
 
 # Route to allow users to follow other users
-@app.route('/follow/<int:followed_id>')#, methods=['POST'])
+@app.route('/follow/<int:followed_id>')
 @login_required
 def follow(followed_id):
     try:
@@ -618,7 +679,7 @@ def follow(followed_id):
         return Response(status=500)
     
 # Route to allow users to unfollow other users
-@app.route('/unfollow/<int:followed_id>')#, methods=['POST'])
+@app.route('/unfollow/<int:followed_id>')
 @login_required
 def unfollow(followed_id):
     try:

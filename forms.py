@@ -45,3 +45,8 @@ class EditPostForm(FlaskForm):
 class SearchForm(FlaskForm):
     searched_f = StringField('Searched', validators=[DataRequired()])
     submit_f = SubmitField('Search')
+
+# Comment form class
+class CommentForm(FlaskForm):
+    contents_f = TextAreaField('Comment', widget=TextArea(), validators=[DataRequired(), Length(min=1, max=1000)])
+    submit_f = SubmitField('Post comment')
