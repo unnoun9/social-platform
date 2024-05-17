@@ -8,8 +8,21 @@ from forms import SignupForm, LoginForm, EditProfileForm, PostForm, EditPostForm
 
 
 # TODO - Make a different py file for all queries - Store them in a dictionary and call them as needed
-# TODO - Add post comments / replies
 
+# TODO - Add the ability for users to change their passwords (probably using a new route)
+# TODO - Add the ability for users to select pfps from their machine and upload them (hard)
+# TODO - Add the ability for users to add media to posts (hard)
+# TODO - Add the ability to edit and delete comments
+# TODO - Add the ability to reply on comments (hard)
+# TODO - Add the ability to endorse and condemn comments (hard - may require a new table (yikes))
+# TODO - Add the ability to allow users to soft delete their account - their account will be permanently deleted after 7 days (maybe a procedure or a trigger for this? (dayyum))
+# TODO - The navbar search can be improved by improving the searching queries (hard and optional for now)
+
+# TODO - Implement messages
+# TODO - Implement sharing of posts through messages
+# TODO - Implement notifications
+# TODO - Implement blocking users
+# TODO - Implement communities
 
 # Flask app instance
 app = Flask(__name__)
@@ -96,7 +109,6 @@ def search():
             if not form.searched_f.data.strip():
                 return Response(status=204)
             # Search for users and posts that match the search query and pass them to the search page
-            # TODO - The SQL queris can be improved so that they reflect the search query better
             query = """
                 SELECT *
                 FROM user_accounts
@@ -387,7 +399,6 @@ def profile_view(user_id):
 @app.route('/profile/delete/<int:user_id>')
 @login_required
 def profile_delete(user_id):
-    # TODO - Add a confirmation dialog before deleting the account???
     pass 
 
 # Create a post

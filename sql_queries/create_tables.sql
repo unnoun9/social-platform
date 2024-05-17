@@ -197,11 +197,3 @@ CREATE TABLE community_members (
     FOREIGN KEY(member_id) REFERENCES user_accounts(id)
         ON DELETE CASCADE ON UPDATE CASCADE
 );
-
-
-<form method="POST" action="{{ url_for('comment_create', post_id=post[0]) }}">
-                    <div class="form-group">
-                        <label for="comment">Comment</label>
-                        <textarea class="form-control" id="comment" name="comment" rows="3"></textarea>
-                    </div>
-                </form>
