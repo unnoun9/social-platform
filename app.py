@@ -9,7 +9,6 @@ from forms import SignupForm, LoginForm, EditProfileForm, PostForm, EditPostForm
 
 # TODO - Make a different py file for all queries - Store them in a dictionary and call them as needed
 
-# TODO - Add the ability to edit and delete comments (doing rn... test it)
 # TODO - Add the ability for users to change their passwords (probably using a new route)
 # TODO - Add the ability for users to select pfps from their machine and upload them (hard)
 # TODO - Add the ability for users to add media to posts (hard)
@@ -100,23 +99,16 @@ def index():
     return render_template('index.html', all_feed=posts_users)
 
 # Search functionality (from the navbar)
-@app.route('/search', methods=['POST'])
+@app.route('/search', methods=['GET', 'POST'])
 def search():
     try:
         form = SearchForm()
         if form.validate_on_submit():
+            search_query = form.searched_f.data.strip()
             # If the search field is empty, return a 204 status code
-            if not form.searched_f.data.strip():
+            if not search_query:
                 return Response(status=204)
-            # Search for users and posts that match the search query and pass them to the search page
-            query = """
-                SELECT *
-                FROM user_accounts
-                WHERE display_name LIKE %s
-                ORDER BY display_name
-            """
-            g.cursor.execute(query, ('%' + form.searched_f.data + '%',))
-            users = g.cursor.fetchall()
+            # Search for posts and users that match the search query and pass them to the search page
             query = """
                 SELECT P.id, P.title, P.content, P.date_created,
                 U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
@@ -125,9 +117,17 @@ def search():
                 WHERE U.privacy = 'Public' AND account_status != 'Deleted' AND (P.title LIKE %s OR P.content LIKE %s)
                 ORDER BY P.date_created DESC
             """
-            g.cursor.execute(query, ('%' + form.searched_f.data + '%', '%' + form.searched_f.data + '%'))
+            g.cursor.execute(query, ('%' + search_query + '%', '%' + search_query + '%'))
             posts = g.cursor.fetchall()
-            return render_template('search.html', form=form, query=form.searched_f.data, users=users, posts=posts)
+            query = """
+                SELECT *
+                FROM user_accounts
+                WHERE display_name LIKE %s
+                ORDER BY display_name
+            """
+            g.cursor.execute(query, ('%' + search_query + '%',))
+            users = g.cursor.fetchall()
+            return render_template('search.html', form=form, query=search_query, users=users, posts=posts)
         # If the search field is empty, return a 204 status code
         if not form.searched_f.data.strip():
                 return Response(status=204)
@@ -165,7 +165,7 @@ def signup():
                 """
                 g.cursor.execute(query, (form.display_name_f.data, form.email_f.data, hashed_password))
                 g.db.commit()
-                flash("Account registered successfully. You may log in.")
+                flash("Account registered. You may log in.")
                 return redirect(url_for('login'))
     except Exception as e:
         print(e)
@@ -193,11 +193,12 @@ def login():
                 user_obj = load_user(user[0])
                 login_user(user_obj)
                 flash("Login successful.")
-                return redirect(url_for('profile'))
+                return redirect(request.referrer or url_for('profile'))
+        return render_template('login.html', form=form)
     except Exception as e:
         print(e)
         flash("An error occurred while logging you in.", "error")
-    return render_template('login.html', form=form)
+        return redirect(request.referrer or url_for('index'))
 
 # Logout
 @app.route('/logout')
@@ -205,12 +206,12 @@ def login():
 def logout():
     try:
         logout_user()
-        flash("Logged out successfully.")
+        flash("Logged out.")
         return redirect(url_for('index'))
     except Exception as e:
         print(e)
         flash("An error occurred while logging you out.", "error")
-        return redirect(url_for('profile'))
+        return redirect(request.referrer or url_for('index'))
 
 # User account / profile of the logged in user
 @app.route('/profile')
@@ -319,7 +320,7 @@ def profile_edit():
                 current_user.id
             ))
             g.db.commit()
-            flash('Profile updated successfully.')
+            flash('Profile updated.')
             return redirect(url_for('profile'))
         return render_template('profile_edit.html', form=form, user=user_info)
     except Exception as e:
@@ -415,7 +416,7 @@ def post_create():
             """
             g.cursor.execute(query, (current_user.id, form.title_f.data, form.contents_f.data))
             g.db.commit()
-            flash("Post created successfully.")
+            flash("Post created.")
             # Redirect to the newly created post
             query = """
                 SELECT id
@@ -479,7 +480,7 @@ def post_view(post_id):
             g.cursor.execute(query, (post_id, current_user.id, form.contents_f.data))
             g.db.commit()
             form.contents_f.data = ""
-            flash("Comment posted successfully.")
+            flash("Comment posted.")
             return redirect(request.referrer or url_for('index'))
         # Get the comments on the post if any
         query = """
@@ -539,8 +540,8 @@ def post_edit(post_id):
             return redirect(request.referrer or url_for('index'))
         # Fetch existing data and populate the form only on GET request
         if request.method == 'GET':
-            form.title_f.data = post[3]
-            form.contents_f.data = post[4]
+            form.title_f.data = post[2]
+            form.contents_f.data = post[3]
         # Update the post
         if form.validate_on_submit():
             query = """
@@ -550,7 +551,7 @@ def post_edit(post_id):
             """
             g.cursor.execute(query, (form.title_f.data, form.contents_f.data, post_id))
             g.db.commit()
-            flash("Post updated successfully.")
+            flash("Post updated.")
             return redirect(url_for('post_view', post_id=post_id))
         return render_template('post_edit.html', form=form)
     except Exception as e:
@@ -578,7 +579,7 @@ def post_delete(post_id):
         query = 'DELETE FROM posts WHERE id = %s'
         g.cursor.execute(query, (post_id,))
         g.db.commit()
-        flash("Post deleted successfully.")
+        flash("Post deleted.")
         return redirect(request.referrer or url_for('index'))
     except Exception as e:
         print(e)
@@ -666,7 +667,7 @@ def comment_edit(comment_id):
             """
             g.cursor.execute(query, (form.contents_f.data, comment_id))
             g.db.commit()
-            flash("Comment updated successfully.")
+            flash("Comment updated.")
             return redirect(url_for('post_view', post_id=comment[1]))
         return render_template('comment_edit.html', form=form)
     except Exception as e:
@@ -701,7 +702,7 @@ def comment_delete(comment_id):
         query = 'DELETE FROM comments WHERE id = %s'
         g.cursor.execute(query, (comment_id,))
         g.db.commit()
-        flash("Comment deleted successfully.")
+        flash("Comment deleted.")
         return redirect(request.referrer or url_for('index'))
     except Exception as e:
         print(e)
@@ -794,7 +795,6 @@ def users_delete(user_id):
         query = 'DELETE FROM user_accounts WHERE id = %s'
         g.cursor.execute(query, (user_id,))
         g.db.commit()
-        flash("User deleted successfully.")
     except Exception as e:
         print(e)
         flash("An error occurred while deleting the user.", "error")

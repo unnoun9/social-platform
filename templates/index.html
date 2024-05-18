@@ -16,25 +16,28 @@
             <div class="card-body">
                 <blockquote class="blockquote mb-0">
                     {% if feed[2] %}
-                    <p class="text-break alot-of-content ellipsis" style="max-height:none;">{{ feed[2] }}</p>
+                    <p class="text-break alot-of-content ellipsis" style="max-height: none;">{{ feed[2] }}</p>
                     {% else %}
                     <p class="text-muted fw-lighter">No content entered yet</p>
                     {% endif %}
-                    <hr><br>
-                    <footer class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ feed[3] }}</cite></footer>
                     <br>
-                </blockquote>
-				
-                <div class="feed-user-pfp-name">
-				    <a href="{{ url_for('profile_view', user_id=feed[4]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
-                        {% if not feed[7] %}
-                        <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ feed[5] }}'s profile picture">
+                    <div class="posts-user-pfp-name position-relative">
+                        {% if feed[4] == current_user.id %}
+                        <a href="{{ url_for('profile_view', user_id=feed[4]) }}" class="link-danger link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
                         {% else %}
-						<img src="{{ feed[7] }}" class="nav-user-pfp" alt="{{ feed[5] }}'s profile picture">
+                        <a href="{{ url_for('profile_view', user_id=feed[4]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
                         {% endif %}
-						<strong>{{ feed[5] }}</strong>
-                    </a>
-                </div>
+                            {% if not feed[7] %}
+                            <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ feed[5] }}'s profile picture">
+                            {% else %}
+                            <img src="{{ feed[7] }}" class="nav-user-pfp" alt="{{ feed[5] }}'s profile picture">
+                            {% endif %}
+                            <strong>{{ feed[5] }}</strong>
+                        </a>
+                    </div>
+                    <hr>
+                    <div class="text-secondary">Created on: {{ feed[3] }}</div>
+                </blockquote>
             </div>
         </div><br><br>
 		{% endfor %}

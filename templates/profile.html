@@ -15,55 +15,49 @@
             <img src="{{ user['pfp_url'] }}" alt="Profile Picture Default">
             {% endif %}
         </div>
-        <br>
-
-        <div class="front-of-pfp">
-            <h2>Display name</h2>
-            <p>{{ user["display_name"] }}</p>
-            <hr>
-
-            <h2>Email</h2>
-            <p>{{ user["email_address"] }}</p>
-            <hr>
-            
-            <h2>Account created on</h2>
-            <p>{{ user["signup_date"] }}</p>
-        </div>
-
-        <!-- TODO - DB + Jinja logic... -->
-        <p class="text-muted fw-lighter followers-profile">{{ user['followers'] }} followers</p>
         
-        <h2>About</h2>
+        <p class="text-muted followers-profile">{{ user['followers'] }} followers</p>
+        
+        <div class="profile-display-name">"{{ user["display_name"] }}"</div>
+        
+        <h2 class="fw-lighter">About</h2>
         {% if not user["about"] %}
-        <p class="text-muted fw-lighter">No bio yet</p>
+        <p class="text-secondary">No bio yet</p>
         {% else %}
         <p class="alot-of-content">{{ user["about"] }} </p>
         {% endif %}
         <hr>
 
-        <h2>Location</h2>
+        <h2 class="fw-lighter">Location</h2>
         {% if not user["location"] %}
-        <p class="text-muted fw-lighter">Not entered yet</p>
+        <p class="text-secondary">Not entered yet</p>
         {% else %}
         <p>{{ user["location"] }}</p>
         {% endif %}
         <hr>
 
-        <h2>Age</h2>
+        <h2 class="fw-lighter">Age</h2>
         {% if not user["age"] %}
-        <p class="text-muted fw-lighter">Not entered yet</p>
+        <p class="text-secondary">Not entered yet</p>
         {% else %}
         <p>{{ user["age"] }}</p>
         {% endif %}
         <hr>
 
-        <h2>Date of birth</h2>
+        <h2 class="fw-lighter">Date of birth</h2>
         {% if not user["date_of_birth"] %}
-        <p class="text-muted fw-lighter">Not entered yet</p>
+        <p class="text-secondary">Not entered yet</p>
         {% else %}
         <p>{{ user["date_of_birth"] }}</p>
         {% endif %}
         <hr>
+
+        <h2 class="fw-lighter">Email</h2>
+        <p>{{ user["email_address"] }}</p>
+        <hr>
+
+        <h2 class="fw-lighter">Account created on</h2>
+        <p>{{ user["signup_date"] }}</p>
 
     </div>
     
@@ -90,9 +84,10 @@
                     {% if post[3] %}
                     <p class="text-break alot-of-content ellipsis">{{ post[3] }}</p>
                     {% else %}
-                    <p class="text-muted fw-lighter">No content entered yet</p>
+                    <p class="text-secondary">No content entered yet</p>
                     {% endif %}
-                    <footer class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ post[4] }}</cite></footer>
+                    <br><br>
+                    <div class="text-secondary">Created on: {{ post[4] }}</div>
                 </blockquote>
             </div>
 

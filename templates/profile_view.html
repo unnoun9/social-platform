@@ -14,65 +14,51 @@
             <img src="{{ user['pfp_url'] }}" alt="Profile Picture Default">
             {% endif %}
         </div>
-        <br>
 
         {% if user["privacy"] == 'Private' %}
-            <div class="front-of-pfp">
-                <h2>Display name</h2>
-                <p>{{ user["display_name"] }}</p>
-                <hr>
+            <div class="profile-display-name text-muted">"{{ user["display_name"] }}"</div>
 
-                <h2>Account created on</h2>
-                <p>{{ user["signup_date"] }}</p>
-                <hr>
+            <h2 class="fw-lighter">Account created on</h2>
+            <p>{{ user["signup_date"] }}</p>
+            <hr>
 
-                <h5 class="text-danger">This user has set their profile to private</h5>
-            </div>
+            <h5 class="text-danger">This user has set their profile to private</h5>
         {% else %}
-            <div class="front-of-pfp">
-                <h2>Display name</h2>
-                <p>{{ user["display_name"] }}</p>
-                <hr>
-
-                <h2>Email</h2>
-                <p>{{ user["email_address"] }}</p>
-                <hr>
-
-                <h2>Account created on</h2>
-                <p>{{ user["signup_date"] }}</p>
-            </div>
-
-            <p class="text-muted fw-lighter followers-profile-view">{{ user['followers'] }} followers</p>
             {% if current_user.is_authenticated and not user['is_already_followed'] %}
-            <a href="{{ url_for('follow', followed_id=user['id']) }}" type="submit" class="btn btn-outline-secondary btn-sm follow-btn">Follow</a>
+            <a href="{{ url_for('follow', followed_id=user['id']) }}" type="submit" class="btn btn-outline-danger btn-sm follow-btn">Follow</a>
             {% elif current_user.is_authenticated and user['is_already_followed']%}
-            <a href="{{ url_for('unfollow', followed_id=user['id']) }}" type="submit" class="btn btn-outline-secondary btn-sm follow-btn">Unfollow</a>
+            <a href="{{ url_for('unfollow', followed_id=user['id']) }}" type="submit" class="btn btn-danger btn-sm follow-btn">Unfollow</a>
             {% endif %}
+            
+            <p class="text-muted followers-profile-view">{{ user['followers'] }} followers</p>
+            
+            <div class="profile-display-name">"{{ user["display_name"] }}"</div>
 
-            <h2>About</h2>
-            {% if not user["about"] %}
-            <p class="text-muted fw-lighter">No bio yet</p>
-            {% else %}
+            {% if user["about"] %}
+            <h2 class="fw-lighter">About</h2>
             <p class="alot-of-content">{{ user["about"]}}</p>
-            {% endif %}
             <hr>
+            {% endif %}
 
-            <h2>Location</h2>
-            {% if not user["location"] %}
-            <p class="text-muted fw-lighter">Not entered yet</p>
-            {% else %}
+            {% if user["location"] %}
+            <h2 class="fw-lighter">Location</h2>
             <p>{{ user["location"] }}</p>
-            {% endif %}
             <hr>
+            {% endif %}
 
-            <h2>Age</h2>
-            {% if not user["age"] %}
-            <p class="text-muted fw-lighter">Not entered yet</p>
-            {% else %}
+            {% if user["age"] %}
+            <h2 class="fw-lighter">Age</h2>
             <p>{{ user["age"] }}</p>
+            <hr>
             {% endif %}
+            
+            <h2 class="fw-lighter">Email</h2>
+            <p>{{ user["email_address"] }}</p>
             <hr>
 
+            <h2 class="fw-lighter">Account created on</h2>
+            <p>{{ user["signup_date"] }}</p>
+            
         {% endif %}
 
     </div>
@@ -98,7 +84,8 @@
                     {% else %}
                     <p class="text-muted fw-lighter">No content entered yet</p>
                     {% endif %}
-                    <footer class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ post[4] }}</cite></footer>
+                    <br>
+                    <div class="text-secondary">Created on: {{ post[4] }}</div>
                 </blockquote>
             </div>
 

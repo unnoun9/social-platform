@@ -28,8 +28,6 @@ CREATE TABLE posts (
     
     PRIMARY KEY(id),
     FOREIGN KEY(user_id) REFERENCES user_accounts(id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY(parent_id) REFERENCES posts(id)
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -50,16 +48,6 @@ CREATE TABLE comments (
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE post_media (
-	id INT NOT NULL AUTO_INCREMENT,
-    post_id INT NOT NULL,
-    url TEXT NOT NULL,
-    
-    PRIMARY KEY(id),
-    FOREIGN KEY(post_id) REFERENCES posts(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-);
-
 CREATE TABLE endorsements (
 	id INT NOT NULL AUTO_INCREMENT,
     user_id INT NOT NULL,
@@ -74,6 +62,53 @@ CREATE TABLE endorsements (
         ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT chk_endorsement_type CHECK (endorsement_type IN ("Condemnation", "Endorsement")),
     UNIQUE (user_id, post_id)
+);
+
+CREATE TABLE post_media (
+	id INT NOT NULL AUTO_INCREMENT,
+    post_id INT NOT NULL,
+    url TEXT NOT NULL,
+    
+    PRIMARY KEY(id),
+    FOREIGN KEY(post_id) REFERENCES posts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE followers (
+	follower_id INT NOT NULL,
+    followed_id INT NOT NULL,
+    
+    FOREIGN KEY (follower_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (followed_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE blocked_users (
+    id INT NOT NULL AUTO_INCREMENT,
+    blocker_id INT NOT NULL,
+    blocked_id INT NOT NULL,
+    date_blocked DATETIME NOT NULL,
+
+    PRIMARY KEY(id),
+    FOREIGN KEY(blocker_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY(blocked_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE messages (
+    id INT NOT NULL AUTO_INCREMENT,
+    sender_id INT NOT NULL,
+    receiver_id INT NOT NULL,
+    content VARCHAR(5000) NOT NULL,
+    date_sent DATETIME NOT NULL,
+
+    PRIMARY KEY(id),
+    FOREIGN KEY(sender_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY(receiver_id) REFERENCES user_accounts(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE share_posts (
@@ -92,48 +127,6 @@ CREATE TABLE share_posts (
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- CREATE TABLE tags (
--- 	id INT NOT NULL AUTO_INCREMENT,
---     title VARCHAR(30) NOT NULL,
---     description VARCHAR(100) NOT NULL,
-    
---     PRIMARY KEY(id)
--- );
-
--- CREATE TABLE post_tags (
--- 	post_id INT NOT NULL,
---     tag_id INT NOT NULL,
-    
---     FOREIGN KEY(post_id) REFERENCES posts(id)
---         ON DELETE CASCADE ON UPDATE CASCADE,
---     FOREIGN KEY(tag_id) REFERENCES tags(id)
---         ON DELETE CASCADE ON UPDATE CASCADE
--- );
-
-CREATE TABLE followers (
-	follower_id INT NOT NULL,
-    followed_id INT NOT NULL,
-    
-    FOREIGN KEY (follower_id) REFERENCES user_accounts(id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (followed_id) REFERENCES user_accounts(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-CREATE TABLE messages (
-    id INT NOT NULL AUTO_INCREMENT,
-    sender_id INT NOT NULL,
-    receiver_id INT NOT NULL,
-    content VARCHAR(5000) NOT NULL,
-    date_sent DATETIME NOT NULL,
-
-    PRIMARY KEY(id),
-    FOREIGN KEY(sender_id) REFERENCES user_accounts(id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY(receiver_id) REFERENCES user_accounts(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-);
-
 CREATE TABLE message_media (
     id INT NOT NULL AUTO_INCREMENT,
     message_id INT NOT NULL,
@@ -141,19 +134,6 @@ CREATE TABLE message_media (
 
     PRIMARY KEY(id),
     FOREIGN KEY(message_id) REFERENCES messages(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-CREATE TABLE blocked_users (
-    id INT NOT NULL AUTO_INCREMENT,
-    blocker_id INT NOT NULL,
-    blocked_id INT NOT NULL,
-    date_blocked DATETIME NOT NULL,
-
-    PRIMARY KEY(id),
-    FOREIGN KEY(blocker_id) REFERENCES user_accounts(id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY(blocked_id) REFERENCES user_accounts(id)
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -197,3 +177,21 @@ CREATE TABLE community_members (
     FOREIGN KEY(member_id) REFERENCES user_accounts(id)
         ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+-- CREATE TABLE tags (
+-- 	id INT NOT NULL AUTO_INCREMENT,
+--     title VARCHAR(30) NOT NULL,
+--     description VARCHAR(100) NOT NULL,
+    
+--     PRIMARY KEY(id)
+-- );
+
+-- CREATE TABLE post_tags (
+-- 	post_id INT NOT NULL,
+--     tag_id INT NOT NULL,
+    
+--     FOREIGN KEY(post_id) REFERENCES posts(id)
+--         ON DELETE CASCADE ON UPDATE CASCADE,
+--     FOREIGN KEY(tag_id) REFERENCES tags(id)
+--         ON DELETE CASCADE ON UPDATE CASCADE
+-- );

@@ -1,6 +1,5 @@
-<br>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-	<div class="container">
+<nav class="navbar navbar-expand-lg bg-dark" data-bs-theme="dark">
+	<div class="container-fluid">
 
 		<a class="navbar-brand" href="{{ url_for('index') }}">
 		<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chat-square-quote" viewBox="0 0 16 16">
@@ -8,22 +7,50 @@
 			<path d="M7.066 4.76A1.665 1.665 0 0 0 4 5.668a1.667 1.667 0 0 0 2.561 1.406c-.131.389-.375.804-.777 1.22a.417.417 0 1 0 .6.58c1.486-1.54 1.293-3.214.682-4.112zm4 0A1.665 1.665 0 0 0 8 5.668a1.667 1.667 0 0 0 2.561 1.406c-.131.389-.375.804-.777 1.22a.417.417 0 1 0 .6.58c1.486-1.54 1.293-3.214.682-4.112z"/>
 		</svg> Social Platform
 		</a>
-		
+
+		<!-- For small screens -->
+		{% if current_user.is_authenticated %}
+		<div class="d-lg-none" style="margin-left:auto; margin-right:1.5em">
+			<a class="nav-link" href="{{ url_for('profile') }}">
+				{% if current_user.pfp_url %}
+				<img src="{{ current_user.pfp_url }}" class="nav-user-pfp">
+				{% else %}
+				<img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp">
+				{% endif %}
+				{{ current_user.display_name }}
+			</a>
+		</div>
+		{% endif %}
+
+		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+
 		<div class="collapse navbar-collapse" id="navbarSupportedContent">
+			<hr>
 			<!-- Search functionality used here -->
-			<form method="POST" action="{{ url_for('search') }}"  class="d-flex ms-auto rounded w-50" role="search">
+			<form method="POST" action="{{ url_for('search') }}" class="d-flex ms-auto" role="search">
 				{{ form.hidden_tag() }}
-				<input class="form-control search-bar-round" id="searchbox" type="search" placeholder="Search" aria-label="Search" name="searched_f">
-				<button class="btn btn-outline-danger search-btn-round" type="submit">
+				<input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="searched_f">
+				<button class="btn btn-outline-danger" type="submit">
 					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
 						<path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
-				  	</svg>
+					</svg>
 				</button>
-			</form>
+			</form><hr>
+
+			<div class="nav-divider d-none d-lg-block"></div>
 
 			<ul class="navbar-nav ml-auto">
 				{% if current_user.is_authenticated %}
-					<li class="nav-item dropdown">
+					<!-- For small screens -->
+					<div class="d-lg-none">
+						<li class="nav-item dropdown"><a class="nav-link active" href="{{ url_for('post_create') }}">Create a post</a></li>
+						<li class="nav-item dropdown"><a class="nav-link active" href="{{ url_for('logout') }}">Logout</a></li>
+					</div>
+
+					<!-- For large screens -->
+					<li class="nav-item dropdown d-none d-lg-block">
 						<a class="nav-link dropdown-toggle" href="{{ url_for('profile') }}" role="button" data-bs-toggle="dropdown" aria-expanded="false">
 							{% if current_user.pfp_url %}
 							<img src="{{ current_user.pfp_url }}" class="nav-user-pfp">
@@ -52,5 +79,6 @@
 
 		</div>			
 	</div>
+	
 </nav>
 <hr>

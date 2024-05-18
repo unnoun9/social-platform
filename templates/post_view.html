@@ -19,26 +19,37 @@
             <div class="card-body">
                 <blockquote class="blockquote mb-0">
                     {% if post[3] %}
-                    <p class="text-break alot-of-content" style="max-height:none;">{{ post[3] }}</p>
+                    <p class="text-break alot-of-content" style="max-height: none;">{{ post[3] }}</p>
                     {% else %}
                     <p class="text-muted fw-lighter">No content entered yet</p>
                     {% endif %}
                     <br>
-                    <br>
-                    <div class="blockquote-footer">{{ post_endorsements }} endorsements</div>
-                    <div class="blockquote-footer">{{ post_condemnations }} condemnations</div>
-                    {% if user_endorsement == 'Endorsement' %}
-                        <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Endorsement') }}" class="btn btn-danger">Endorse</a>
-                        <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Condemnation') }}" class="btn btn-outline-secondary">Condemn</a>
-                    {% elif user_endorsement == 'Condemnation' %}
-                        <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Endorsement') }}" class="btn btn-outline-danger">Endorse</a>
-                        <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Condemnation') }}" class="btn btn-secondary">Condemn</a>
-                    {% else %}
-                        <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Endorsement') }}" class="btn btn-outline-danger">Endorse</a>
-                        <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Condemnation') }}" class="btn btn-outline-secondary">Condemn</a>
+                    <div class="posts-user-pfp-name position-relative">
+                        <a href="{{ url_for('profile_view', user_id=user[0]) }}" class="link-danger link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
+                            {% if not user[6] %}
+                            <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ user[1] }}'s profile picture">
+                            {% else %}
+                            <img src="{{ user[6] }}" class="nav-user-pfp" alt="{{ user[1] }}'s profile picture">
+                            {% endif %}
+                            <strong>{{ user[1] }}</strong>
+                        </a>
+                    </div>
+                    <hr>
+                    {% if current_user.is_authenticated %}
+                        {% if user_endorsement == 'Endorsement' %}
+                            <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Endorsement') }}" class="btn btn-danger">Endorse</a>
+                            <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Condemnation') }}" class="btn btn-outline-secondary">Condemn</a>
+                        {% elif user_endorsement == 'Condemnation' %}
+                            <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Endorsement') }}" class="btn btn-outline-danger">Endorse</a>
+                            <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Condemnation') }}" class="btn btn-secondary">Condemn</a>
+                        {% else %}
+                            <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Endorsement') }}" class="btn btn-outline-danger">Endorse</a>
+                            <a href="{{ url_for('endorse', post_id=post[0], endorsement_type='Condemnation') }}" class="btn btn-outline-secondary">Condemn</a>
+                        {% endif %}<br><hr>
                     {% endif %}
-                    <div class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ post[4] }}</cite></div><br><br>
-                    <div class="blockquote-footer indent-to-right-of-post">Created by: <a href="{{ url_for('profile_view', user_id=user[0]) }}" class="link-danger link-offset-2 link-underline-opacity-0 link-underline-opacity-100-hover">{{ user[1] }}</a></div>
+                    <div class="text-secondary">{{ post_endorsements }} endorsements</div>
+                    <div class="text-secondary">{{ post_condemnations }} condemnations</div><hr>
+                    <div class="text-secondary">Created on: {{ post[4] }}</div>
                 </blockquote>
             </div>
         </div>        
@@ -83,7 +94,11 @@
             <div class="card-body">
                 <blockquote class="blockquote mb-0">
                     <div class="posts-user-pfp-name position-relative">
+                        {% if comment[3] == user[0] %}
+                        <a href="{{ url_for('profile_view', user_id=comment[3]) }}" class="link-danger link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
+                        {% else %}
                         <a href="{{ url_for('profile_view', user_id=comment[3]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
+                        {% endif %}
                             {% if not comment[6] %}
                             <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ comment[4] }}'s profile picture">
                             {% else %}

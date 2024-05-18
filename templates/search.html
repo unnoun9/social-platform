@@ -19,30 +19,36 @@
             {% for post in posts %}
             <div class="card hover-overlay shadow-1-strong rounded">
                 <div class="card-header">
-                    <div class="alot-of-content">{{ post[2] }}</div>
+                    <div class="alot-of-content">{{ post[1] }}</div>
                     <a class="btn btn-outline-secondary btn-sm indent-to-top-right-of-post" href="{{ url_for('post_view', post_id=post[0])}}">View</a>
                 </div>
 
                 <div class="card-body">
                     <blockquote class="blockquote mb-0">
-                        {% if post[3] %}
-                        <p class="text-break alot-of-content ellipsis" style="max-height:none;">{{ post[3] }}</p>
-                        <hr>
+                        {% if post[2] %}
+                        <p class="text-break alot-of-content ellipsis" style="max-height:none;">{{ post[2] }}</p>
                         {% endif %}
                         <br>
-                        <footer class="blockquote-footer indent-to-right-of-post">Created on: <cite title="Source Title">{{ post[4] }}</cite></footer>
-                        <br>
+                        <div class="posts-user-pfp-name position-relative">
+                            {% if post[4] == current_user.id %}
+                            <a href="{{ url_for('profile_view', user_id=post[4]) }}" class="link-danger link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
+                            {% else %}
+                            <a href="{{ url_for('profile_view', user_id=post[4]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
+                            {% endif %}
+                                {% if not post[7] %}
+                                <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ post[5] }}'s profile picture">
+                                {% else %}
+                                <img src="{{ post[7] }}" class="nav-user-pfp" alt="{{ post[5] }}'s profile picture">
+                                {% endif %}
+                                <strong>{{ post[5] }}</strong>
+                            </a>
+                        </div>
+                        <hr>
+                        <div class="text-secondary">Created on: {{ post[3] }}</div>
                     </blockquote>
                     
                     <div class="feed-user-pfp-name">
-                        <a href="{{ url_for('profile_view', user_id=post[5]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
-                            {% if not post[8] %}
-                            <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ post[6] }}'s profile picture">
-                            {% else %}
-                            <img src="{{ post[8] }}" class="nav-user-pfp" alt="{{ post[6] }}'s profile picture">
-                            {% endif %}
-                            <strong>@{{ post[6] }}</strong>
-                        </a>
+                        
                     </div>
                 </div>
             </div><br><br>
@@ -61,7 +67,11 @@
             <div class="card">
                 <div class="card-body">
                     <div class="posts-user-pfp-name position-relative">
+                        {% if user[0] == current_user.id %}
+                        <a href="{{ url_for('profile_view', user_id=user[0]) }}" class="link-danger link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
+                        {% else %}
                         <a href="{{ url_for('profile_view', user_id=user[0]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
+                        {% endif %}
                             {% if not user[6] %}
                             <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ user[1] }}'s profile picture">
                             {% else %}
@@ -70,7 +80,7 @@
                             <strong>{{ user[1] }}</strong>
                         </a>
                         {% if user[7] and not user[7] == "" %}
-                        <br><hr>
+                        <br><br>
                         <div class="search-user-about text-secondary">{{ user[7] }}</div>
                         {% endif %}
                     </div>
