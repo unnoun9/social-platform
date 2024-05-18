@@ -4,23 +4,24 @@ from credentials import credentials
 from flask import Flask, Response, g, render_template, redirect, request, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import SignupForm, LoginForm, EditProfileForm, PostForm, EditPostForm, SearchForm, CommentForm, EditCommentForm
+from forms import SignupForm, LoginForm, EditProfileForm, PasswordChangeForm, PostForm, EditPostForm, SearchForm, CommentForm, EditCommentForm
+from datetime import datetime, timedelta
 
 
 # TODO - Make a different py file for all queries - Store them in a dictionary and call them as needed
 
-# TODO - Add the ability for users to change their passwords (probably using a new route)
+# DONE - NEED TESTING - TODO - Add the ability for users to change their passwords (probably using a new route)
+# DONE - NEED TESTING - TODO - Add the ability to allow users to soft delete their account - their account will be permanently deleted after 7 days (maybe a procedure or a trigger for this? (dayyum))
 # TODO - Add the ability for users to select pfps from their machine and upload them (hard)
 # TODO - Add the ability for users to add media to posts (hard)
 # TODO - Add the ability to reply on comments (hard)
 # TODO - Add the ability to endorse and condemn comments (hard - may require a new table (yikes))
-# TODO - Add the ability to allow users to soft delete their account - their account will be permanently deleted after 7 days (maybe a procedure or a trigger for this? (dayyum))
 # TODO - The navbar search can be improved by improving the searching queries (hard and optional for now)
 
+# TODO - Implement blocking users
 # TODO - Implement messages
 # TODO - Implement sharing of posts through messages
 # TODO - Implement notifications
-# TODO - Implement blocking users
 # TODO - Implement communities
 
 # Flask app instance
@@ -47,7 +48,7 @@ login_manager.login_view = 'login'
 
 # User class for login manager
 class User(UserMixin):
-    def __init__ (self, user_id, display_name, email_address, hashed_password, signup_date, account_status, pfp_url, about, location, date_of_birth, privacy):
+    def __init__ (self, user_id, display_name, email_address, hashed_password, signup_date, account_status, pfp_url, about, location, date_of_birth, privacy, deleted_date):
         self.id = user_id
         self.display_name = display_name
         self.email_address = email_address
@@ -59,6 +60,7 @@ class User(UserMixin):
         self.location = location
         self.date_of_birth = date_of_birth
         self.privacy = privacy
+        self.deleted_date = deleted_date
 
 # Load user from database
 @login_manager.user_loader
@@ -67,11 +69,8 @@ def load_user(user_id):
     g.cursor.execute(query, (user_id,))
     user = g.cursor.fetchone()
     if user:
-        return User(user_id=user[0], display_name=user[1], email_address=user[2], hashed_password=user[3], signup_date=user[4], account_status=user[5], pfp_url=user[6], about=user[7], location=user[8], date_of_birth=user[9], privacy=user[10])
+        return User(user_id=user[0], display_name=user[1], email_address=user[2], hashed_password=user[3], signup_date=user[4], account_status=user[5], pfp_url=user[6], about=user[7], location=user[8], date_of_birth=user[9], privacy=user[10], deleted_date=user[11])
     return None
-
-
-
 
 # Pass search form to the navbar
 @app.context_processor
@@ -223,7 +222,7 @@ def profile():
         g.cursor.execute(query, (current_user.id,))
         user_details = g.cursor.fetchone()
         if not user_details:
-            flash("User not found.", "error")
+            flash("User not found.")
             return redirect(url_for('index'))
         user_info = {
             "display_name": user_details[1],
@@ -234,7 +233,7 @@ def profile():
             "about": user_details[7],
             "location": user_details[8],
             "date_of_birth": user_details[9],
-            "privacy": user_details[10]
+            "privacy": user_details[10],
         }
         # Get the user's age
         query = """
@@ -244,6 +243,15 @@ def profile():
         """
         g.cursor.execute(query, (current_user.id,))
         user_info["age"] = g.cursor.fetchone()[0]
+        # Get the user's days until their account is permanently deleted
+        if user_info["account_status"] == "Deleted":
+            query = """
+                SELECT DATEDIFF(deleted_date, CURDATE()) AS days_until_deletion
+                FROM user_accounts
+                WHERE id = %s
+            """
+            g.cursor.execute(query, (current_user.id,))
+            user_info["days_until_deletion"] = g.cursor.fetchone()[0]
         # Get the current logged in user's posts
         query = """
             SELECT *
@@ -264,7 +272,6 @@ def profile():
     except Exception as e:
         print(e)
         flash("An error occurred while fetching your profile data.", "error")
-        # Return to the last visited page
         return redirect(request.referrer or url_for('index'))
     
 # Edit user profile
@@ -328,6 +335,84 @@ def profile_edit():
         flash("An error occurred while updating your profile.", "error")
         return redirect(request.referrer or url_for('index'))
 
+# Let a user change their password
+@app.route('/profile/change_password', methods=['GET', 'POST'])
+@login_required
+def profile_password_change():
+    try:
+        form = PasswordChangeForm()
+        if form.validate_on_submit():
+            # Check if the old password is correct
+            query = 'SELECT hashed_password FROM user_accounts WHERE id = %s'
+            g.cursor.execute(query, (current_user.id,))
+            hashed_password = g.cursor.fetchone()[0]
+            if not check_password_hash(hashed_password, form.old_password_f.data):
+                flash("Old password is incorrect. Please try again.")
+                return render_template('profile_password_change.html', form=form)
+            if form.old_password_f.data == form.new_password_f.data:
+                flash("New password cannot be the same as the old password. Please try again.")
+                return render_template('profile_password_change.html', form=form)
+            # Check if the new password and confirm password fields match
+            if form.new_password_f.data != form.new_password_confirm_f.data:
+                flash("Passwords do not match. Please try again.")
+                return render_template('profile_password_change.html', form=form)
+            # Update the password
+            new_hashed_password = generate_password_hash(form.new_password_f.data)
+            query = 'UPDATE user_accounts SET hashed_password = %s WHERE id = %s'
+            g.cursor.execute(query, (new_hashed_password, current_user.id))
+            g.db.commit()
+            flash("Password changed.")
+            return redirect(url_for('profile'))
+        return render_template('profile_password_change.html', form=form)
+    except Exception as e:
+        print(e)
+        flash("An error occurred while changing the password.", "error")
+        return redirect(request.referrer or url_for('index'))
+
+# Let a user soft delete thier user account
+@app.route('/profile/delete', methods=['POST'])
+@login_required
+def profile_delete():
+    try:
+        if current_user.account_status == "Deleted":
+            flash("Your account is already deleted or is scheduled to be deleted.")
+            return redirect(request.referrer or url_for('index'))
+        # Soft delete the account
+        query = """
+            UPDATE user_accounts
+            SET account_status = 'Deleted', deleted_date = NOW()
+            WHERE id = %s
+        """
+        g.cursor.execute(query, (current_user.id,))
+        g.db.commit()
+        flash("Account soft deleted. It will be permanently deleted after 7 days.")
+    except Exception as e:
+        flash("An error occurred while deleting the account.", "error")
+        print(e)
+    return redirect(request.referrer or url_for('index'))
+
+# Let a user recover thier soft deleted account
+@app.route('/profile/recover', methods=['POST'])
+@login_required
+def profile_recover():
+    try:
+        if current_user.account_status != "Deleted":
+            flash("Your account is not deleted.")
+            return redirect(request.referrer or url_for('index'))
+        # Recover the account
+        query = """
+            UPDATE user_accounts
+            SET account_status = 'Active', deleted_date = NULL
+            WHERE id = %s
+        """
+        g.cursor.execute(query, (current_user.id,))
+        g.db.commit()
+        flash("Account recovered.")
+    except Exception as e:
+        flash("An error occurred while recovering the account.", "error")
+        print(e)
+    return redirect(request.referrer or url_for('index'))
+
 # Third party view of user profiles
 @app.route('/profile/user/<int:user_id>')
 def profile_view(user_id):
@@ -341,7 +426,7 @@ def profile_view(user_id):
         g.cursor.execute(query, (user_id,))
         user_details = g.cursor.fetchone()
         if not user_details:
-            flash("User not found.", "error")
+            flash("User not found.")
             return redirect(request.referrer or url_for('index'))
         user_info = {
             "id": user_id,
@@ -396,12 +481,6 @@ def profile_view(user_id):
         flash("An error occurred while fetching the user's profile.", "error")
         return redirect(request.referrer or url_for('index'))
 
-# Delete a user account (soft delete - account_status = 'Deleted')
-@app.route('/profile/delete/<int:user_id>')
-@login_required
-def profile_delete(user_id):
-    pass 
-
 # Create a post
 @app.route('/post/create', methods=['GET','POST'])
 @login_required
@@ -441,7 +520,7 @@ def post_view(post_id):
         g.cursor.execute(query, (post_id,))
         post = g.cursor.fetchone()
         if not post:
-            flash("Post not found.", "error")
+            flash("Post not found.")
             return redirect(url_for('index'))
         # Get the endorsement and condemnation count of the post
         query = """
@@ -533,7 +612,7 @@ def post_edit(post_id):
         post = g.cursor.fetchone()
         # Check if the post exists and the user is authorized to edit it
         if not post:
-            flash("Post not found.", "error")
+            flash("Post not found.")
             return redirect(request.referrer or url_for('index'))
         if current_user.id != post[1]:
             flash("You are not authorized to edit this post.", "error")
@@ -570,7 +649,7 @@ def post_delete(post_id):
         post = g.cursor.fetchone()
         # Check if the post exists and the user is authorized to delete it
         if not post:
-            flash("Post not found.", "error")
+            flash("Post not found.")
             return redirect(request.referrer or url_for('index'))
         if current_user.id != post[1]:
             flash("You are not authorized to delete this post.", "error")
@@ -774,8 +853,8 @@ def unfollow(followed_id):
 
 
 
-
-# Temporary route to shows all users (for testing purposes)
+# Admin routes (temporary routes maybe?)
+# Shows all users
 @app.route('/users')
 def users():
     try:
@@ -788,7 +867,7 @@ def users():
         flash("An error occurred while fetching the users.", "error")
         return redirect(request.referrer or url_for('index'))
 
-# Temporary route to delete users (for testing purposes)
+# Delete users
 @app.route('/users/delete/<int:user_id>')
 def users_delete(user_id):
     try:

@@ -29,6 +29,13 @@ class EditProfileForm(FlaskForm):
     # TODO - Password change field
     submit_f = SubmitField('Save changes')
 
+# Change password form class
+class PasswordChangeForm(FlaskForm):
+    old_password_f = PasswordField('Old password', validators=[DataRequired(), Length(min=8, max=80)])
+    new_password_f = PasswordField('New password', validators=[DataRequired(), Length(min=8, max=80)])
+    new_password_confirm_f = PasswordField('Confirm new password', validators=[DataRequired(), Length(min=8, max=80)])
+    submit_f = SubmitField('Change password')
+
 # Post form class
 class PostForm(FlaskForm):
     title_f = StringField('Title', validators=[DataRequired(), Length(min=1, max=100)])

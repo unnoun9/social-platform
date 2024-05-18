@@ -12,6 +12,7 @@ CREATE TABLE user_accounts (
     location VARCHAR(50),
     date_of_birth DATE,
     privacy VARCHAR(8) DEFAULT 'Public',
+    deleted_date DATETIME DEFAULT NULL,
     
     PRIMARY KEY(id),
     UNIQUE (display_name),

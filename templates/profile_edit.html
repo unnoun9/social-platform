@@ -4,7 +4,7 @@
     {% include 'navbar.html' %}
     {% include 'flashes.html' %}
     
-    <h1>{{ user["display_name"] }}'s profile (edit)</h1>
+    <h1>Your profile (edit)</h1>
     <br>
 
     <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary">
@@ -31,9 +31,13 @@
             {{ form.privacy_f.label(class="form-label") }}
             {{ form.privacy_f(class="form-control") }}
             <br>
-            {{ form.submit_f(class="btn btn-outline-danger") }}
+            {{ form.submit_f(class="btn btn-danger") }}
         </form>
         <br>
+        <hr>
+        <a href="{{ url_for('profile_password_change') }}" class="btn btn-outline-danger btn-sm">Change Password</a>
+        <hr>
+        <a href="{{ url_for('profile_delete', user_id=user['id']) }}" class="btn btn-outline-danger btn-sm">Delete Account</a>
     </div>
 
 {% endblock %}

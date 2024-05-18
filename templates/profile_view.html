@@ -3,6 +3,12 @@
 {% block content %}
     {% include 'navbar.html' %}
     {% include 'flashes.html' %}
+{% if user["account_status"] == 'Deleted' %}
+
+    <h1 class="text-danger">This account has been or is scheduled to be deleted</h1>
+
+{% else %}
+
     <h1>{{ user["display_name"] }}'s profile</h1>
     <br>
     <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary position-relative">
@@ -95,4 +101,5 @@
     </div>
     {% endif %}
 
+{% endif %}
 {% endblock %}
