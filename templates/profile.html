@@ -3,11 +3,14 @@
 {% block content %}
     {% include 'navbar.html' %}
     {% include 'flashes.html' %}
-
+    
 {% if user["account_status"] == 'Deleted' %}
-
-    <h1 class="text-danger">Your account will be deleted in <strong>{{ user['days_until_deletion'] }} days</strong>. If you do not want this to happen, click the button below.</h1>
-    <a href="{{ url_for('profile_recover') }}" class="btn btn-danger btn-large">Recover your account</a>
+    
+    <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary position-relative">
+    <h1 class="text-muted">Your account will be deleted in <span class="fw-bold text-danger">{{ user['days_until_deletion'] }} days</span>. If you do not want this to happen, click the button below.</h1>
+    <hr>
+    <a href="{{ url_for('profile_recover') }}" class="btn btn-outline-danger btn-lg">Recover your account</a>
+    </div>
 
 {% else %}
 

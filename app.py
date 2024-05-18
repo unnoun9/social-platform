@@ -175,6 +175,7 @@ def signup():
 @app.route('/login', methods=['GET','POST'])
 def login():
     try:
+
         # Do not let a logged in user to access login route
         if current_user.is_authenticated:
             return redirect(url_for('profile'))
@@ -192,6 +193,8 @@ def login():
                 user_obj = load_user(user[0])
                 login_user(user_obj)
                 flash("Login successful.")
+                if user_obj.account_status == "Deleted":
+                    flash("Warning: Your account is deleted or is scheduled to be deleted.")
                 return redirect(request.referrer or url_for('profile'))
         return render_template('login.html', form=form)
     except Exception as e:
@@ -234,6 +237,7 @@ def profile():
             "location": user_details[8],
             "date_of_birth": user_details[9],
             "privacy": user_details[10],
+            "deleted_date": user_details[11]
         }
         # Get the user's age
         query = """
@@ -245,13 +249,8 @@ def profile():
         user_info["age"] = g.cursor.fetchone()[0]
         # Get the user's days until their account is permanently deleted
         if user_info["account_status"] == "Deleted":
-            query = """
-                SELECT DATEDIFF(deleted_date, CURDATE()) AS days_until_deletion
-                FROM user_accounts
-                WHERE id = %s
-            """
-            g.cursor.execute(query, (current_user.id,))
-            user_info["days_until_deletion"] = g.cursor.fetchone()[0]
+            remaining_days = (user_info['deleted_date'] + timedelta(days=7) - datetime.now()).days
+            user_info["days_until_deletion"] = remaining_days
         # Get the current logged in user's posts
         query = """
             SELECT *
@@ -294,6 +293,10 @@ def profile_edit():
             "date_of_birth": user_details[9],
             "privacy": user_details[10]
         }
+        # Do not let the user edit their profile if their account is deleted
+        if user_info['account_status'] == "Deleted":
+            flash("Your account is already deleted or is scheduled to be deleted. You can't edit your profile.")
+            return redirect(request.referrer or url_for('index'))
         # Fetch existing data and populate the form only on GET request
         if request.method == 'GET':
             form.display_name_f.data = user_info["display_name"]
@@ -370,7 +373,7 @@ def profile_password_change():
         return redirect(request.referrer or url_for('index'))
 
 # Let a user soft delete thier user account
-@app.route('/profile/delete', methods=['POST'])
+@app.route('/profile/delete', methods=['GET', 'POST'])
 @login_required
 def profile_delete():
     try:
@@ -389,10 +392,10 @@ def profile_delete():
     except Exception as e:
         flash("An error occurred while deleting the account.", "error")
         print(e)
-    return redirect(request.referrer or url_for('index'))
+    return redirect(url_for('index'))
 
 # Let a user recover thier soft deleted account
-@app.route('/profile/recover', methods=['POST'])
+@app.route('/profile/recover', methods=['GET', 'POST'])
 @login_required
 def profile_recover():
     try:
@@ -486,6 +489,10 @@ def profile_view(user_id):
 @login_required
 def post_create():
     try:
+        # Do not let the user create a post if their account is deleted
+        if current_user.account_status == "Deleted":
+            flash("Your is already deleted or is scheduled to be deleted. You can't create a post.")
+            return redirect(request.referrer or url_for('index'))
         form = PostForm()
         # Insert the post into the database, making sure that the authenticated user adds the post
         if form.validate_on_submit():
@@ -551,6 +558,10 @@ def post_view(post_id):
         form = CommentForm()
         # If form is submitted and the user is logged in, insert a new comment into the db
         if current_user.is_authenticated and form.validate_on_submit():
+            # Do not let the user comment on a post if their account is deleted
+            if current_user.account_status == "Deleted":
+                flash("Your account is already deleted or is scheduled to be deleted. You can't comment on a post.")
+                return redirect(request.referrer or url_for('index'))
             query = """
                 INSERT INTO comments (post_id, user_id, content, date_created)
                 VALUES (%s, %s, %s, NOW())
@@ -567,7 +578,7 @@ def post_view(post_id):
             U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
             FROM comments C
             JOIN user_accounts U ON C.user_id = U.id
-            WHERE C.post_id = %s
+            WHERE C.post_id = %s and U.account_status != 'Deleted'
             ORDER BY C.date_created DESC
         """
         g.cursor.execute(query, (post_id,))
@@ -670,6 +681,10 @@ def post_delete(post_id):
 @login_required
 def endorse(post_id, endorsement_type):
     try:
+        # Do not let the user endorse or condemn a post if their account is deleted
+        if current_user.account_status == "Deleted":
+            flash("Your account is already deleted or is scheduled to be deleted. You can't endorse or condemn a post.")
+            return redirect(request.referrer or url_for('index'))
         # Check if endorsement_type is valid
         if endorsement_type not in ['Condemnation', 'Endorsement']:
             return redirect(request.referrer or url_for('index'))
@@ -793,6 +808,10 @@ def comment_delete(comment_id):
 @login_required
 def follow(followed_id):
     try:
+        # Do not let the user follow a user if their account is deleted
+        if current_user.account_status == "Deleted":
+            flash("Your account is already deleted or is scheduled to be deleted. You can't follow a user.")
+            return redirect(request.referrer or url_for('index'))
         follower_id = current_user.id
         # Don't allow the user to follow themselves lol
         if follower_id == followed_id:
@@ -824,6 +843,10 @@ def follow(followed_id):
 @login_required
 def unfollow(followed_id):
     try:
+        # Do not let the user unfollow a user if their account is deleted
+        if current_user.account_status == "Deleted":
+            flash("Your account is already deleted or is scheduled to be deleted. You can't unfollow a user.")
+            return redirect(request.referrer or url_for('index'))
         follower_id = current_user.id
         # Don't allow the user to unfollow themselves lol
         if follower_id == followed_id:

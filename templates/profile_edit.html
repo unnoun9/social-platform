@@ -37,6 +37,7 @@
         <hr>
         <a href="{{ url_for('profile_password_change') }}" class="btn btn-outline-danger btn-sm">Change Password</a>
         <hr>
+        <p class="text-secondary"><span class="fw-bold">Warning:</span> Deleting your account will delete all your posts, comments, and follows after 7 days. You may visit your profile and recover your account, only in that interval. This action is irreversible after that interval. Proceed with caution.</p>
         <a href="{{ url_for('profile_delete', user_id=user['id']) }}" class="btn btn-outline-danger btn-sm">Delete Account</a>
     </div>
 
