@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 
 # TODO - Make a different py file for all queries - Store them in a dictionary and call them as needed
 
-# DONE - NEED TESTING - TODO - Add the ability for users to change their passwords (probably using a new route)
 # DONE - NEED TESTING - TODO - Add the ability to allow users to soft delete their account - their account will be permanently deleted after 7 days (maybe a procedure or a trigger for this? (dayyum))
 # TODO - Add the ability for users to select pfps from their machine and upload them (hard)
 # TODO - Add the ability for users to add media to posts (hard)
@@ -18,7 +17,7 @@ from datetime import datetime, timedelta
 # TODO - Add the ability to endorse and condemn comments (hard - may require a new table (yikes))
 # TODO - The navbar search can be improved by improving the searching queries (hard and optional for now)
 
-# TODO - Implement blocking users
+# DONE - NEED TESTING - TODO - Implement blocking users
 # TODO - Implement messages
 # TODO - Implement sharing of posts through messages
 # TODO - Implement notifications
@@ -85,15 +84,31 @@ def pass_search_form():
 # Index
 @app.route('/')
 def index():
-    query = """
-        SELECT P.id, P.title, P.content, P.date_created,
-        U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
-        FROM posts P
-        JOIN user_accounts U ON P.user_id = U.id
-        WHERE U.privacy = 'Public' AND account_status != 'Deleted'
-        ORDER BY P.date_created DESC
-    """
-    g.cursor.execute(query)
+    # Get all posts and users for the feed
+    if current_user.is_authenticated:
+        query = """
+            SELECT P.id, P.title, P.content, P.date_created,
+            U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
+            FROM posts P
+            JOIN user_accounts U ON P.user_id = U.id
+            LEFT JOIN blocked_users B1 ON (B1.blocked_id = P.user_id AND B1.blocker_id = %s)
+            LEFT JOIN blocked_users B2 ON (B2.blocked_id = %s AND B2.blocker_id = P.user_id)
+            WHERE U.privacy = 'Public' AND U.account_status != 'Deleted'
+            AND B1.blocked_id IS NULL
+            AND B2.blocked_id IS NULL
+            ORDER BY P.date_created DESC
+        """
+        g.cursor.execute(query, (current_user.id, current_user.id))
+    else:
+        query = """
+            SELECT P.id, P.title, P.content, P.date_created,
+            U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
+            FROM posts P
+            JOIN user_accounts U ON P.user_id = U.id
+            WHERE U.privacy = 'Public' AND account_status != 'Deleted'
+            ORDER BY P.date_created DESC
+        """
+        g.cursor.execute(query)
     posts_users = g.cursor.fetchall()
     return render_template('index.html', all_feed=posts_users)
 
@@ -108,24 +123,49 @@ def search():
             if not search_query:
                 return Response(status=204)
             # Search for posts and users that match the search query and pass them to the search page
-            query = """
-                SELECT P.id, P.title, P.content, P.date_created,
-                U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
-                FROM posts P
-                JOIN user_accounts U ON P.user_id = U.id
-                WHERE U.privacy = 'Public' AND account_status != 'Deleted' AND (P.title LIKE %s OR P.content LIKE %s)
-                ORDER BY P.date_created DESC
-            """
-            g.cursor.execute(query, ('%' + search_query + '%', '%' + search_query + '%'))
-            posts = g.cursor.fetchall()
-            query = """
-                SELECT *
-                FROM user_accounts
-                WHERE display_name LIKE %s
-                ORDER BY display_name
-            """
-            g.cursor.execute(query, ('%' + search_query + '%',))
-            users = g.cursor.fetchall()
+            if current_user.is_authenticated:
+                query = """
+                    SELECT P.id, P.title, P.content, P.date_created,
+                    U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
+                    FROM posts P
+                    JOIN user_accounts U ON P.user_id = U.id
+                    LEFT JOIN blocked_users B1 ON (B1.blocked_id = P.user_id AND B1.blocker_id = %s)
+                    LEFT JOIN blocked_users B2 ON (B2.blocked_id = %s AND B2.blocker_id = P.user_id)
+                    WHERE U.privacy = 'Public' AND U.account_status != 'Deleted' AND (P.title LIKE %s OR P.content LIKE %s)
+                    AND B1.blocked_id IS NULL
+                    AND B2.blocked_id IS NULL
+                    ORDER BY P.date_created DESC
+                """
+                g.cursor.execute(query, (current_user.id, current_user.id, '%' + search_query + '%', '%' + search_query + '%'))
+                posts = g.cursor.fetchall()
+                query = """
+                    SELECT *
+                    FROM user_accounts U
+                    LEFT JOIN blocked_users B ON (B.blocked_id = %s AND B.blocker_id = U.id)
+                    WHERE display_name LIKE %s AND B.blocked_id IS NULL
+                    ORDER BY display_name
+                """
+                g.cursor.execute(query, (current_user.id, '%' + search_query + '%',))
+                users = g.cursor.fetchall()
+            else:
+                query = """
+                    SELECT P.id, P.title, P.content, P.date_created,
+                    U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
+                    FROM posts P
+                    JOIN user_accounts U ON P.user_id = U.id
+                    WHERE U.privacy = 'Public' AND account_status != 'Deleted' AND (P.title LIKE %s OR P.content LIKE %s)
+                    ORDER BY P.date_created DESC
+                """
+                g.cursor.execute(query, ('%' + search_query + '%', '%' + search_query + '%'))
+                posts = g.cursor.fetchall()
+                query = """
+                    SELECT *
+                    FROM user_accounts
+                    WHERE display_name LIKE %s
+                    ORDER BY display_name
+                """
+                g.cursor.execute(query, ('%' + search_query + '%',))
+                users = g.cursor.fetchall()
             return render_template('search.html', form=form, query=search_query, users=users, posts=posts)
         # If the search field is empty, return a 204 status code
         if not form.searched_f.data.strip():
@@ -478,11 +518,100 @@ def profile_view(user_id):
                 user_info["is_already_followed"] = True
             else:
                 user_info["is_already_followed"] = False
+        # Check if the user has blocked the user whose profile is being viewed and vice versa
+        if current_user.is_authenticated:
+            query = """
+                SELECT 1 FROM blocked_users
+                WHERE blocker_id = %s AND blocked_id = %s
+            """
+            g.cursor.execute(query, (current_user.id, user_id))
+            if g.cursor.fetchone():
+                user_info["is_blocked"] = True
+            else:
+                user_info["is_blocked"] = False
+            query = """
+                SELECT 1 FROM blocked_users
+                WHERE blocker_id = %s AND blocked_id = %s
+            """
+            g.cursor.execute(query, (user_id, current_user.id))
+            if g.cursor.fetchone():
+                flash("You have been blocked by this user.")
+                return redirect(request.referrer or url_for('index'))
         return render_template('profile_view.html', user=user_info)
     except Exception as e:
         print(e)
         flash("An error occurred while fetching the user's profile.", "error")
         return redirect(request.referrer or url_for('index'))
+
+# Block a user
+@app.route('/profile/user/block<int:user_id>')
+@login_required
+def block_user(user_id):
+    try:
+        # Do not let the user block a user if their account is deleted
+        if current_user.account_status == "Deleted":
+            flash("Your account is already deleted or is scheduled to be deleted. You can't block a user.")
+            return redirect(request.referrer or url_for('index'))
+        # Do not let the user block themselves
+        if user_id == current_user.id:
+            flash("You cannot block yourself.")
+            return redirect(request.referrer or url_for('index'))
+        # Check if the user is already blocked
+        query = """
+            SELECT * FROM blocked_users
+            WHERE blocker_id = %s AND blocked_id = %s
+        """
+        g.cursor.execute(query, (current_user.id, user_id))
+        if g.cursor.fetchone():
+            flash("User is already blocked.")
+            return redirect(request.referrer or url_for('index'))
+        # Block the user
+        query = """
+            INSERT INTO blocked_users (blocker_id, blocked_id, date_blocked)
+            VALUES (%s, %s, NOW())
+        """
+        g.cursor.execute(query, (current_user.id, user_id))
+        # Unfollow the user
+        query = """
+            DELETE FROM followers
+            WHERE follower_id = %s AND followed_id = %s
+        """
+        g.cursor.execute(query, (current_user.id, user_id))
+        g.db.commit()
+    except Exception as e:
+        print(e)
+        flash("An error occurred while blocking the user.", "error")
+    return redirect(request.referrer or url_for('index'))
+    
+# Unblock a user
+@app.route('/profile/user/unblock<int:user_id>')
+@login_required
+def unblock_user(user_id):
+    try:
+        # Do not let the user unblock a user if their account is deleted
+        if current_user.account_status == "Deleted":
+            flash("Your account is already deleted or is scheduled to be deleted. You can't unblock a user.")
+            return redirect(request.referrer or url_for('index'))
+        # Check if the user is already unblocked
+        query = """
+            SELECT * FROM blocked_users
+            WHERE blocker_id = %s AND blocked_id = %s
+        """
+        g.cursor.execute(query, (current_user.id, user_id))
+        if not g.cursor.fetchone():
+            flash("User is not blocked.")
+            return redirect(request.referrer or url_for('index'))
+        # Unblock the user
+        query = """
+            DELETE FROM blocked_users
+            WHERE blocker_id = %s AND blocked_id = %s
+        """
+        g.cursor.execute(query, (current_user.id, user_id))
+        g.db.commit()
+    except Exception as e:
+        print(e)
+        flash("An error occurred while unblocking the user.", "error")
+    return redirect(request.referrer or url_for('index'))
 
 # Create a post
 @app.route('/post/create', methods=['GET','POST'])
@@ -529,6 +658,17 @@ def post_view(post_id):
         if not post:
             flash("Post not found.")
             return redirect(url_for('index'))
+        # Check if the owner has blocked the user or the user has blocked the owner
+        if current_user.is_authenticated:
+            query = """
+                SELECT 1 FROM blocked_users
+                WHERE (blocker_id = %s AND blocked_id = %s)
+                OR (blocker_id = %s AND blocked_id = %s)
+            """
+            g.cursor.execute(query, (post[1], current_user.id, current_user.id, post[1]))
+            if g.cursor.fetchone():
+                flash("You cannot view this post.")
+                return redirect(request.referrer or url_for('index'))
         # Get the endorsement and condemnation count of the post
         query = """
             SELECT COUNT(*) FROM endorsements
@@ -572,16 +712,31 @@ def post_view(post_id):
             form.contents_f.data = ""
             flash("Comment posted.")
             return redirect(request.referrer or url_for('index'))
-        # Get the comments on the post if any
-        query = """
-            SELECT C.id, C.content, C.date_created,
-            U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
-            FROM comments C
-            JOIN user_accounts U ON C.user_id = U.id
-            WHERE C.post_id = %s and U.account_status != 'Deleted'
-            ORDER BY C.date_created DESC
-        """
-        g.cursor.execute(query, (post_id,))
+        # Get the comments on the post if any, whilst also checking blocking conditions
+        if current_user.is_authenticated:
+            query = """
+                SELECT C.id, C.content, C.date_created,
+                U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
+                FROM comments C
+                JOIN user_accounts U ON C.user_id = U.id
+                LEFT JOIN blocked_users B1 ON (B1.blocked_id = C.user_id AND B1.blocker_id = %s)
+                LEFT JOIN blocked_users B2 ON (B2.blocked_id = %s AND B2.blocker_id = C.user_id)
+                WHERE C.post_id = %s AND U.account_status != 'Deleted'
+                AND B1.blocked_id IS NULL
+                AND B2.blocked_id IS NULL
+                ORDER BY C.date_created DESC
+            """
+            g.cursor.execute(query, (current_user.id, current_user.id, post_id))
+        else:
+            query = """
+                SELECT C.id, C.content, C.date_created,
+                U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
+                FROM comments C
+                JOIN user_accounts U ON C.user_id = U.id
+                WHERE C.post_id = %s AND U.account_status != 'Deleted'
+                ORDER BY C.date_created DESC
+            """
+            g.cursor.execute(query, (post_id,))
         post_comments = g.cursor.fetchall()
         # Get the number of comments on the post
         query = """
@@ -824,6 +979,15 @@ def follow(followed_id):
         # Don't let the user follow a user if they are already following them
         if g.cursor.fetchone():
             return Response(status=204)
+        # Don't let the user follow a user if they are blocked
+        query = """
+            SELECT 1 FROM blocked_users
+            WHERE blocker_id = %s AND blocked_id = %s
+        """
+        g.cursor.execute(query, (followed_id, follower_id))
+        if g.cursor.fetchone():
+            flash("You cannot follow this user.")
+            return redirect(request.referrer or url_for('index'))
         # Follow the user
         else:
             query = """

@@ -30,13 +30,14 @@
             <h2 class="fw-lighter">Account created on</h2>
             <p>{{ user["signup_date"] }}</p>
             <hr>
-
             <h5 class="text-danger">This user has set their profile to private</h5>
         {% else %}
+            {% if not user["is_blocked"] %}
             {% if current_user.is_authenticated and not user['is_already_followed'] %}
             <a href="{{ url_for('follow', followed_id=user['id']) }}" type="submit" class="btn btn-outline-danger btn-sm follow-btn">Follow</a>
             {% elif current_user.is_authenticated and user['is_already_followed']%}
-            <a href="{{ url_for('unfollow', followed_id=user['id']) }}" type="submit" class="btn btn-danger btn-sm follow-btn">Unfollow</a>
+            <a href="{{ url_for('unfollow', followed_id=user['id']) }}" type="submit" class="btn btn-danger btn-sm follow-btn">Followed</a>
+            {% endif %}
             {% endif %}
             
             <p class="text-muted followers-profile-view">{{ user['followers'] }} followers</p>
@@ -70,6 +71,15 @@
             
         {% endif %}
 
+        {% if current_user.is_authenticated %}
+        <hr>
+        {% if not user["is_blocked"] %}
+        <a href="{{ url_for('block_user', user_id=user['id']) }}" type="submit" class="btn btn-outline-danger btn-sm">Block</a>
+        {% else %}
+        <a href="{{ url_for('unblock_user', user_id=user['id']) }}" type="submit" class="btn btn-danger btn-sm">Blocked</a>
+        {% endif %}
+        {% endif %}
+
     </div>
 
     {% if user["privacy"] == 'Public' %}
@@ -78,6 +88,7 @@
     <br>
 
     <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary position-relative">
+    {% if not user["is_blocked"] %}
     {% for post in user["posts"] %}
         <div class="card hover-overlay shadow-1-strong rounded">
 
@@ -101,6 +112,9 @@
         </div>
         <br>
     {% endfor %}
+    {% else %}
+    <h4 class="text-muted">You have blocked this user and can't view thier posts.</h4>
+    {% endif %}
     </div>
     {% endif %}
 
