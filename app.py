@@ -4,15 +4,15 @@ from credentials import credentials
 from flask import Flask, Response, g, render_template, redirect, request, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import SignupForm, LoginForm, EditProfileForm, PostForm, EditPostForm, SearchForm, CommentForm
+from forms import SignupForm, LoginForm, EditProfileForm, PostForm, EditPostForm, SearchForm, CommentForm, EditCommentForm
 
 
 # TODO - Make a different py file for all queries - Store them in a dictionary and call them as needed
 
+# TODO - Add the ability to edit and delete comments (doing rn... test it)
 # TODO - Add the ability for users to change their passwords (probably using a new route)
 # TODO - Add the ability for users to select pfps from their machine and upload them (hard)
 # TODO - Add the ability for users to add media to posts (hard)
-# TODO - Add the ability to edit and delete comments
 # TODO - Add the ability to reply on comments (hard)
 # TODO - Add the ability to endorse and condemn comments (hard - may require a new table (yikes))
 # TODO - Add the ability to allow users to soft delete their account - their account will be permanently deleted after 7 days (maybe a procedure or a trigger for this? (dayyum))
@@ -629,36 +629,86 @@ def endorse(post_id, endorsement_type):
         print(e)
         flash("An error occurred while recording the endorsement.", "error")
         return redirect(request.referrer or url_for('index'))
-    
-# Comment on a post
-@app.route('/comment/<int:post_id>')#, methods=['POST'])
-@login_required
-def comment(post_id):
-    # try:
-    #     form = CommentForm()
-    #     # Get the post details
-    #     query = 'SELECT * FROM posts WHERE id = %s'
-    #     g.cursor.execute(query, (post_id,))
-    #     post = g.cursor.fetchone()
-    #     # Check if the post exists
-    #     if not post:
-    #         flash("Post not found.", "error")
-    #         return redirect(request.referrer or url_for('index'))
-    #     # Insert the comment into the database
-    #     query = """
-    #         INSERT INTO comments (user_id, post_id, comment, date_commented)
-    #         VALUES (%s, %s, %s, NOW())
-    #     """
-    #     g.cursor.execute(query, (current_user.id, post_id, form.content_f.data))
-    #     g.db.commit()
-    #     return redirect(request.referrer or url_for('index'))
-    # except Exception as e:
-    #     print(e)
-    #     flash("An error occurred while commenting on the post.", "error")
-    #     return redirect(request.referrer or url_for('index'))
-    pass
 
-# Route to allow users to follow other users
+# Edit comments
+@app.route('/comment/edit/<int:comment_id>', methods=['GET','POST'])
+@login_required
+def comment_edit(comment_id):
+    try:
+        if not current_user.is_authenticated:
+            flash('You must be logged in to edit your comment.')
+            return redirect(request.referrer or url_for('index'))
+        form = EditCommentForm()
+        # Get the comment details
+        query = """
+            SELECT * FROM comments
+            WHERE id = %s
+        """
+        g.cursor.execute(query, (comment_id,))
+        comment = g.cursor.fetchone()
+        # If there is no such comment, how can it be edited?
+        if not comment:
+            flash('Comment not found.')
+            return redirect(request.referrer or url_for('index'))
+        # Only allow the authorized user to edit thier own comment
+        if current_user.id != comment[2]:
+            flash('You are not authorized to edit this comment.')
+            return redirect(request.referrer or url_for('index'))
+        # Fetch existing data and populate the form only on GET request
+        if request.method == 'GET':
+            form.contents_f.data = comment[4]
+        # Update the comment
+        if form.validate_on_submit():
+            query = """
+                UPDATE comments
+                SET content = %s
+                WHERE id = %s
+            """
+            g.cursor.execute(query, (form.contents_f.data, comment_id))
+            g.db.commit()
+            flash("Comment updated successfully.")
+            return redirect(url_for('post_view', post_id=comment[1]))
+        return render_template('comment_edit.html', form=form)
+    except Exception as e:
+        print(e)
+        flash("An error occurred while editing the comment.", "error")
+        return redirect(request.referrer or url_for('index'))
+
+# Delete a comment
+@app.route('/comment/delete/<int:comment_id>')
+@login_required
+def comment_delete(comment_id):
+    try:
+        if not current_user.is_authenticated:
+            flash('You must be logged in to delete your comment.')
+            return redirect(request.referrer or url_for('index'))
+        # Get the comment details
+        query = """
+            SELECT * FROM comments
+            WHERE id = %s
+        """
+        g.cursor.execute(query, (comment_id,))
+        comment = g.cursor.fetchone()
+        # If there is no such comment, how can it be edited?
+        if not comment:
+            flash('Comment not found.')
+            return redirect(request.referrer or url_for('index'))
+        # Only allow the authorized user to delete thier own comment
+        if current_user.id != comment[2]:
+            flash('You are not authorized to edit this comment.')
+            return redirect(request.referrer or url_for('index'))
+        # Delete the post
+        query = 'DELETE FROM comments WHERE id = %s'
+        g.cursor.execute(query, (comment_id,))
+        g.db.commit()
+        flash("Comment deleted successfully.")
+        return redirect(request.referrer or url_for('index'))
+    except Exception as e:
+        print(e)
+        flash("An error occurred while deleting the comment.", "error")
+        return redirect(request.referrer or url_for('index'))
+
+# Allowing users to follow other users
 @app.route('/follow/<int:followed_id>')
 @login_required
 def follow(followed_id):
@@ -689,7 +739,7 @@ def follow(followed_id):
         flash("An error occurred while trying to follow the user.", "error")
         return Response(status=500)
     
-# Route to allow users to unfollow other users
+# Allowing users to unfollow other users
 @app.route('/unfollow/<int:followed_id>')
 @login_required
 def unfollow(followed_id):

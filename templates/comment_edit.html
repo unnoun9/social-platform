@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% include 'navbar.html' %}
+    {% include 'flashes.html' %}
+    
+    <h1>{{ current_user.display_name }}'s comment (edit)</h1>
+    <br>
+
+    <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            {{ form.contents_f.label(class="form-label") }}
+            {{ form.contents_f(class="form-control") }}
+            <br>
+            {{ form.submit_f(class="btn btn-outline-danger") }}
+        </form>
+        <br>
+    </div>
+
+{% endblock %}

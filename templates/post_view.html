@@ -48,25 +48,31 @@
     <br>
     <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary">
         <div class="card hover-overlay shadow-1-strong rounded">
-            {% if current_user.privacy == 'Public' %}
-            <div class="card-header text-secondary">
-                Perhaps, comment here?
-            </div>
+            {% if current_user.is_authenticated %}
+                {% if current_user.privacy == 'Public' %}
+                <div class="card-header text-secondary">
+                    Perhaps, comment here?
+                </div>
 
-            <div class="card-body">
-                <blockquote class="blockquote mb-0">
-                    <form method="post">
-                        {{ form.hidden_tag() }}
-                        {{ form.contents_f.label(class="form-label") }}
-                        {{ form.contents_f(class="form-control") }}
-                        <br>
-                        {{ form.submit_f(class="btn btn-outline-danger") }}
-                    </form>
-                </blockquote>
-            </div>
+                <div class="card-body">
+                    <blockquote class="blockquote mb-0">
+                        <form method="post">
+                            {{ form.hidden_tag() }}
+                            {{ form.contents_f.label(class="form-label") }}
+                            {{ form.contents_f(class="form-control") }}
+                            <br>
+                            {{ form.submit_f(class="btn btn-outline-danger") }}
+                        </form>
+                    </blockquote>
+                </div>
+                {% else %}
+                <div class="card-header text-secondary">
+                    Your privacy must be public to comment.
+                </div>
+                {% endif %}
             {% else %}
             <div class="card-header text-secondary">
-                Your privacy must be public to comment.
+                You must be logged in to comment.
             </div>
             {% endif %}
         </div><br><hr><br>
@@ -88,6 +94,10 @@
                         {% if comment[1] and not comment[1] == "" %}
                         <br><br>
                         <div class="user-comment-content">{{ comment[1] }}</div>
+                        {% endif %}
+                        {% if current_user.is_authenticated and current_user.id == comment[3] %}
+                        <a class="btn btn-outline-danger btn-sm indent-to-top-right-of-comment" href="{{ url_for('comment_delete', comment_id=comment[0])}}">Delete</a>
+                        <a class="btn btn-outline-secondary btn-sm indent-to-top-right-of-comment" style="right: 5em;" href="{{ url_for('comment_edit', comment_id=comment[0])}}">Edit</a>
                         {% endif %}
                     </div>
                 </blockquote>

@@ -39,7 +39,7 @@ class PostForm(FlaskForm):
 class EditPostForm(FlaskForm):
     title_f = StringField('Title', validators=[DataRequired(), Length(min=1, max=100)])
     contents_f = TextAreaField('Details', widget=TextArea(), validators=[Length(min=0, max=10000)])
-    submit_f = SubmitField('Edit post')
+    submit_f = SubmitField('Save Changes')
 
 # Seach form class
 class SearchForm(FlaskForm):
@@ -49,4 +49,9 @@ class SearchForm(FlaskForm):
 # Comment form class
 class CommentForm(FlaskForm):
     contents_f = TextAreaField('Comment', widget=TextArea(), validators=[DataRequired(), Length(min=1, max=1000)])
-    submit_f = SubmitField('Post comment')
+    submit_f = SubmitField('Comment')
+
+# Comment form class
+class EditCommentForm(FlaskForm):
+    contents_f = TextAreaField('Comment', widget=TextArea(), validators=[DataRequired(), Length(min=1, max=1000)])
+    submit_f = SubmitField('Save Changes')

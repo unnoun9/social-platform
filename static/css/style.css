@@ -114,3 +114,9 @@ body {
     /* top: 0.3em;
     left: 6em; */
 }
+
+.indent-to-top-right-of-comment {
+    position: absolute;
+    top: 0em;
+    right: 0.5em;
+}
