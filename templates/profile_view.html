@@ -7,7 +7,7 @@
 {% if user["account_status"] == 'Deleted' %}
 
     <div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary position-relative">
-    <h1 class="">This account has been or is scheduled to be deleted</h1>
+    <h3 class="">This account has been or is scheduled to be deleted</h3>
     </div>
 
 {% else %}
@@ -33,16 +33,21 @@
             <h5 class="text-danger">This user has set their profile to private</h5>
         {% else %}
             {% if not user["is_blocked"] %}
-            {% if current_user.is_authenticated and not user['is_already_followed'] %}
-            <a href="{{ url_for('follow', followed_id=user['id']) }}" type="submit" class="btn btn-outline-danger btn-sm follow-btn">Follow</a>
-            {% elif current_user.is_authenticated and user['is_already_followed']%}
-            <a href="{{ url_for('unfollow', followed_id=user['id']) }}" type="submit" class="btn btn-danger btn-sm follow-btn">Followed</a>
-            {% endif %}
+                {% if current_user.is_authenticated and not user['is_already_followed'] %}
+                <a href="{{ url_for('follow', followed_id=user['id']) }}" type="submit" class="btn btn-outline-danger btn-sm follow-btn">Follow</a>
+                {% elif current_user.is_authenticated and user['is_already_followed']%}
+                <a href="{{ url_for('unfollow', followed_id=user['id']) }}" type="submit" class="btn btn-danger btn-sm follow-btn">Followed</a>
+                {% endif %}
             {% endif %}
             
             <p class="text-muted followers-profile-view">{{ user['followers'] }} followers</p>
             
-            <div class="profile-display-name">"{{ user["display_name"] }}"</div>
+            <div class="profile-display-name">"{{ user["display_name"] }}"
+                {% if current_user.is_authenticated and not user["is_blocked"] %}
+                <br>
+                <a href="{{ url_for('message_conversation', receiver_id=user['id']) }}" class="btn btn-outline-danger btn-sm">Message</a>
+                {% endif %}
+            </div>
 
             {% if user["about"] %}
             <h2 class="fw-lighter">About</h2>

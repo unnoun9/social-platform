@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+	{% include 'navbar.html' %}
+	{% include 'flashes.html' %}
+    
+    <h1>Conversation</h1>
+	<div class="shadow-sm p-3 mb-5 rounded bg-body-tertiary">
+		<div>
+            <a href="{{ url_for('profile_view', user_id=receiver[0]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
+                {% if not receiver[2] %}
+                <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ receiver_name }}'s profile picture">
+                {% else %}
+                <img src="{{ receiver[2] }}" class="nav-user-pfp" alt="{{ receiver_name }}'s profile picture">
+                {% endif %}
+                <span class="fw-bold">{{ receiver[1] }}</span>
+            </a>
+        </div><hr>
+        {% for message in messages %}
+        <div class="d-flex justify-content-between">
+            <div>
+                {% if message[5] == current_user.display_name %}
+                <strong class="text-danger">{{ message[5] }}:</strong> {{ message[3] }}
+                {% else %}
+                <strong class="text-secondary">{{ message[5] }}:</strong> {{ message[3] }}
+                {% endif %}
+            </div>
+            <div class="text-end">
+                <span>{{ message[4] }}</span>
+            </div>
+        </div>
+        {% endfor %}
+        <hr>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            {{ form.contents_f.label(class="form-label") }}
+            {{ form.contents_f(class="form-control") }}
+            <br>
+            {{ form.submit_f(class="btn btn-outline-danger btn-sm") }}
+        </form>
+
+    </div>
+
+{% endblock %}	

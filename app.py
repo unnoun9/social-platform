@@ -4,7 +4,7 @@ from credentials import credentials
 from flask import Flask, Response, g, render_template, redirect, request, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import SignupForm, LoginForm, EditProfileForm, PasswordChangeForm, PostForm, EditPostForm, SearchForm, CommentForm, EditCommentForm
+from forms import MessageForm, SignupForm, LoginForm, EditProfileForm, PasswordChangeForm, PostForm, EditPostForm, SearchForm, CommentForm, EditCommentForm
 from datetime import datetime, timedelta
 
 
@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 # TODO - The navbar search can be improved by improving the searching queries (hard and optional for now)
 
 # DONE - NEED TESTING - TODO - Implement blocking users
-# TODO - Implement messages
+# DONE - NEED TESTING - TODO - Implement messages
 # TODO - Implement sharing of posts through messages
 # TODO - Implement notifications
 # TODO - Implement communities
@@ -1000,7 +1000,7 @@ def follow(followed_id):
     except Exception as e:
         print(e)
         flash("An error occurred while trying to follow the user.", "error")
-        return Response(status=500)
+        return redirect(request.referrer or url_for('index'))
     
 # Allowing users to unfollow other users
 @app.route('/unfollow/<int:followed_id>')
@@ -1035,10 +1035,129 @@ def unfollow(followed_id):
     except Exception as e:
         print(e)
         flash("An error occurred while trying to unfollow the user.", "error")
-        return Response(status=500)
-        
+        return redirect(request.referrer or url_for('index'))
+    
+# Show all conversations of the current user
+@app.route('/messages')
+@login_required
+def messages():
+    try:
+        # Fetch conversations for the current user
+        query = """
+            SELECT U.id, U.display_name, U.pfp_url, MAX(M.date_sent) AS last_message_date
+            FROM messages M
+            JOIN user_accounts U ON (M.sender_id = U.id OR M.receiver_id = U.id)
+            LEFT JOIN blocked_users B1 ON (M.sender_id = B1.blocker_id AND M.receiver_id = B1.blocked_id)
+            LEFT JOIN blocked_users B2 ON (M.receiver_id = B2.blocker_id AND M.sender_id = B2.blocked_id)
+            WHERE (M.sender_id = %s OR M.receiver_id = %s)
+            AND U.id != %s
+            AND B1.id IS NULL
+            AND B2.id IS NULL
+            GROUP BY U.id
+            ORDER BY last_message_date DESC
+        """
+        g.cursor.execute(query, (current_user.id, current_user.id, current_user.id))
+        conversations = g.cursor.fetchall()
+        return render_template('messages.html', conversations=conversations)
+    except Exception as e:
+        print(e)
+        flash("An error occurred while fetching messages.", "error")
+        return redirect(request.referrer or url_for('index'))
+
+# Helper function to check if the message can be sent or not
+def can_send_message(sender_id, receiver_id):
+    try:
+        # Do not let the user message themselves
+        if sender_id == receiver_id:
+            flash("You cannot message yourself.")
+            return False
+        # Check the acount_status and privacy of both users
+        query = """
+            SELECT account_status, privacy
+            FROM user_accounts
+            WHERE id IN (%s, %s)
+        """
+        g.cursor.execute(query, (sender_id, receiver_id))
+        statuses = g.cursor.fetchall()
+        if not statuses or len(statuses) != 2:
+            flash("User not found.")
+            return False
+        sender_status, receiver_status = statuses[0][0], statuses[1][0]
+        sender_privacy, receiver_privacy = statuses[0][1], statuses[1][1]
+        if sender_status == "Deleted" or receiver_status == "Deleted":
+            flash("A deleted user cannot send or receive messages.")
+            return False
+        if sender_privacy == "Private" or receiver_privacy == "Private":
+            flash("A private user cannot send or receive messages.")
+            return False
+        # Check if the receiver has blocked the sender
+        query = """
+            SELECT 1
+            FROM blocked_users
+            WHERE blocker_id = %s AND blocked_id = %s
+        """
+        g.cursor.execute(query, (receiver_id, sender_id))
+        if g.cursor.fetchone():
+            flash("You cannot message this user.")
+            return False
+        return True
+    except Exception as e:
+        print(e)
+        flash("An error occurred while checking if the message can be sent.", "error")
+        return False
 
 
+# Helper function to send a message
+def send_message(sender_id, receiver_id, content):
+    try:
+        if can_send_message(sender_id, receiver_id) == True:
+            # Send the message
+            query = """
+                INSERT INTO messages (sender_id, receiver_id, content, date_sent)
+                VALUES (%s, %s, %s, NOW())
+            """
+            g.cursor.execute(query, (sender_id, receiver_id, content))
+            g.db.commit()
+            flash('Message sent.')
+    except Exception as e:
+        print(e)
+        flash("An error occurred while sending your message.", "error")
+
+# Show a conversation between the current user and another user
+@app.route('/messages/conversation/<int:receiver_id>', methods=['GET', 'POST'])
+@login_required
+def message_conversation(receiver_id):
+    try:
+        form = MessageForm()
+        # Fetch the conversation between the current user and the specified user
+        query = """
+            SELECT M.id, M.sender_id, M.receiver_id, M.content, M.date_sent, U.display_name, U.pfp_url
+            FROM messages M
+            JOIN user_accounts U ON M.sender_id = U.id
+            WHERE (M.sender_id = %s AND M.receiver_id = %s)
+            OR (M.sender_id = %s AND M.receiver_id = %s)
+            ORDER BY M.date_sent
+        """
+        g.cursor.execute(query, (current_user.id, receiver_id, receiver_id, current_user.id))
+        messages = g.cursor.fetchall()
+        # Fetch the display name and pfp of the receiver
+        query = """
+            SELECT id, display_name, pfp_url
+            FROM user_accounts
+            WHERE id = %s
+        """
+        g.cursor.execute(query, (receiver_id,))
+        receiver_info = g.cursor.fetchone()
+        # Send a message
+        if form.validate_on_submit():
+            send_message(current_user.id, receiver_id, form.contents_f.data)
+            form.contents_f.data = ""
+            return redirect(url_for('message_conversation', receiver_id=receiver_id))
+        return render_template('message_conversation.html', messages=messages, form=form, receiver=receiver_info)
+    except Exception as e:
+        print(e)
+        flash("An error occurred while fetching the conversation.", "error")
+        return redirect(url_for('messages'))
 
 # Admin routes (temporary routes maybe?)
 # Shows all users

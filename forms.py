@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, SubmitField, SelectField, DateField, TextAreaField
+from wtforms import HiddenField, StringField, EmailField, PasswordField, SubmitField, SelectField, DateField, TextAreaField
 from wtforms.validators import DataRequired, Length, Optional
 from wtforms.widgets import TextArea
 
@@ -62,3 +62,8 @@ class CommentForm(FlaskForm):
 class EditCommentForm(FlaskForm):
     contents_f = TextAreaField('Comment', widget=TextArea(), validators=[DataRequired(), Length(min=1, max=1000)])
     submit_f = SubmitField('Save Changes')
+
+# Message form class
+class MessageForm(FlaskForm):
+    contents_f = TextAreaField('Message here', widget=TextArea(), validators=[DataRequired(), Length(min=1, max=5000)])
+    submit_f = SubmitField('Send Message')

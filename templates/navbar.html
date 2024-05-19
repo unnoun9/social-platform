@@ -45,7 +45,9 @@
 				{% if current_user.is_authenticated %}
 					<!-- For small screens -->
 					<div class="d-lg-none">
+						<li class="nav-item dropdown"><a class="nav-link active" href="{{ url_for('messages') }}">Messages</a></li>
 						<li class="nav-item dropdown"><a class="nav-link active" href="{{ url_for('post_create') }}">Create a post</a></li>
+						<li class="nav-item dropdown"><a class="nav-link active" href="{{ url_for('profile_edit') }}">Account settings</a></li>
 						<li class="nav-item dropdown"><a class="nav-link active" href="{{ url_for('logout') }}">Logout</a></li>
 					</div>
 
@@ -61,8 +63,9 @@
 						</a>
 						<ul class="dropdown-menu dropdown-menu-dark">
 							<li><a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a></li>
-							<li><a class="dropdown-item" href="{{ url_for('profile_edit') }}">Account Settings</a></li>
+							<li><a class="dropdown-item" href="{{ url_for('messages') }}">Messages</a></li>
 							<li><a class="dropdown-item" href="{{ url_for('post_create') }}">Create a post</a></li>
+							<li><a class="dropdown-item" href="{{ url_for('profile_edit') }}">Account settings</a></li>
 							<li><hr class="dropdown-divider"></li>
 							<li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
 						</ul>
