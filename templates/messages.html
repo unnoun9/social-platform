@@ -18,12 +18,12 @@
                         {% else %}
                         <img src="{{ conversation[2] }}" class="nav-user-pfp" alt="{{ conversation[1] }}'s profile picture">
                         {% endif %}
-                        <span class="fw-bold">{{ conversation[1] }}</span> messaged you on <span class="fw-bold">{{ conversation[3] }}</span>
+                        You exchanged messages with <span class="fw-bold">{{ conversation[1] }}</span> on <span class="fw-bold">{{ conversation[3] }}</span>
                     </a><br>
                     </div>
                 </blockquote>
             </div>
-        </div><br><br>
+        </div><br>
         {% endfor %}
         {% else %}
         <h3>No conversations</h3>

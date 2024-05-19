@@ -1,6 +1,6 @@
 query = {
 
-    # Users
+# Users
     'select_all_users': """
             SELECT *
             FROM user_accounts
@@ -15,7 +15,7 @@ query = {
         
     'select_user_by_id': """
             SELECT *
-            FROM users
+            FROM user_accounts
             WHERE id = %s
         """,
     
@@ -72,7 +72,7 @@ query = {
             WHERE id = %s
         """,
     
-    # Follows
+# Follows
     'select_follow_instance_by_ids': """
             SELECT * FROM followers
             WHERE follower_id = %s AND followed_id = %s
@@ -93,7 +93,7 @@ query = {
             WHERE follower_id = %s AND followed_id = %s
         """,
 
-    # Blocks
+# Blocks
     'select_blocked_instance_by_ids': """
             SELECT * FROM blocked_users
             WHERE blocker_id = %s AND blocked_id = %s
@@ -115,7 +115,7 @@ query = {
             WHERE blocker_id = %s AND blocked_id = %s
         """,
     
-    # Posts
+# Posts
     'select_post_by_id': """
             SELECT *
             FROM posts
@@ -146,7 +146,7 @@ query = {
             WHERE id = %s
         """,
 
-    # Endorsements
+# Endorsements
     'select_endorsement_count': """
             SELECT COUNT(*) FROM endorsements
             WHERE post_id = %s AND endorsement_type = 'Endorsement'
@@ -178,11 +178,16 @@ query = {
             WHERE id = %s
         """,
 
-    # Comments
+# Comments
     'select_comment_by_id': """
             SELECT *
             FROM comments
             WHERE id = %s
+        """,
+    
+    'insert_comment': """
+            INSERT INTO comments (post_id, user_id, content, date_created)
+            VALUES (%s, %s, %s, NOW())
         """,
 
     'update_comment_content': """
@@ -224,7 +229,7 @@ query = {
             ORDER BY C.date_created DESC
         """,
 
-    # Messages
+# Messages
     'insert_message': """
             INSERT INTO messages (sender_id, receiver_id, content, date_sent)
             VALUES (%s, %s, %s, NOW())
@@ -259,7 +264,7 @@ query = {
             ORDER BY M.date_sent
         """,
 
-    # Feed
+# Feed
     'select_posts_join_users_filter_status_privacy': """
             SELECT P.id, P.title, P.content, P.date_created,
             U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
@@ -282,7 +287,7 @@ query = {
             ORDER BY P.date_created DESC
         """,
 
-    # Searches
+# Searches
     'select_posts_join_users_filter_blockage_status_privacy_search': """
             SELECT P.id, P.title, P.content, P.date_created,
             U.id, U.display_name, U.account_status, U.pfp_url, U.privacy

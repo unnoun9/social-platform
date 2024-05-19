@@ -584,11 +584,7 @@ def post_view(post_id):
             if current_user.account_status == "Deleted":
                 flash("Your account is already deleted or is scheduled to be deleted. You can't comment on a post.")
                 return redirect(request.referrer or url_for('index'))
-            query = """
-                INSERT INTO comments (post_id, user_id, content, date_created)
-                VALUES (%s, %s, %s, NOW())
-            """
-            g.cursor.execute(query, (post_id, current_user.id, form.contents_f.data))
+            g.cursor.execute(query['insert_comment'], (post_id, current_user.id, form.contents_f.data))
             g.db.commit()
             form.contents_f.data = ""
             flash("Comment posted.")
