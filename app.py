@@ -5,10 +5,11 @@ from flask import Flask, Response, g, render_template, redirect, request, url_fo
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from forms import MessageForm, SignupForm, LoginForm, EditProfileForm, PasswordChangeForm, PostForm, EditPostForm, SearchForm, CommentForm, EditCommentForm
+from queries import query
 from datetime import datetime, timedelta
 
 
-# TODO - Make a different py file for all queries - Store them in a dictionary and call them as needed
+# DONE - NEED TESTING - TODO - Make a different py file for all queries - Store them in a dictionary and call them as needed
 
 # DONE - NEED TESTING - TODO - Add the ability to allow users to soft delete their account - their account will be permanently deleted after 7 days (maybe a procedure or a trigger for this? (dayyum))
 # TODO - Add the ability for users to select pfps from their machine and upload them (hard)
@@ -64,8 +65,7 @@ class User(UserMixin):
 # Load user from database
 @login_manager.user_loader
 def load_user(user_id):
-    query = 'SELECT * FROM user_accounts WHERE id = %s'
-    g.cursor.execute(query, (user_id,))
+    g.cursor.execute(query['select_user_by_id'], (user_id,))
     user = g.cursor.fetchone()
     if user:
         return User(user_id=user[0], display_name=user[1], email_address=user[2], hashed_password=user[3], signup_date=user[4], account_status=user[5], pfp_url=user[6], about=user[7], location=user[8], date_of_birth=user[9], privacy=user[10], deleted_date=user[11])
@@ -86,29 +86,9 @@ def pass_search_form():
 def index():
     # Get all posts and users for the feed
     if current_user.is_authenticated:
-        query = """
-            SELECT P.id, P.title, P.content, P.date_created,
-            U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
-            FROM posts P
-            JOIN user_accounts U ON P.user_id = U.id
-            LEFT JOIN blocked_users B1 ON (B1.blocked_id = P.user_id AND B1.blocker_id = %s)
-            LEFT JOIN blocked_users B2 ON (B2.blocked_id = %s AND B2.blocker_id = P.user_id)
-            WHERE U.privacy = 'Public' AND U.account_status != 'Deleted'
-            AND B1.blocked_id IS NULL
-            AND B2.blocked_id IS NULL
-            ORDER BY P.date_created DESC
-        """
-        g.cursor.execute(query, (current_user.id, current_user.id))
+        g.cursor.execute(query['select_posts_join_users_filter_blockage_status_privacy'], (current_user.id, current_user.id))
     else:
-        query = """
-            SELECT P.id, P.title, P.content, P.date_created,
-            U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
-            FROM posts P
-            JOIN user_accounts U ON P.user_id = U.id
-            WHERE U.privacy = 'Public' AND account_status != 'Deleted'
-            ORDER BY P.date_created DESC
-        """
-        g.cursor.execute(query)
+        g.cursor.execute(query['select_posts_join_users_filter_status_privacy'])
     posts_users = g.cursor.fetchall()
     return render_template('index.html', all_feed=posts_users)
 
@@ -124,47 +104,14 @@ def search():
                 return Response(status=204)
             # Search for posts and users that match the search query and pass them to the search page
             if current_user.is_authenticated:
-                query = """
-                    SELECT P.id, P.title, P.content, P.date_created,
-                    U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
-                    FROM posts P
-                    JOIN user_accounts U ON P.user_id = U.id
-                    LEFT JOIN blocked_users B1 ON (B1.blocked_id = P.user_id AND B1.blocker_id = %s)
-                    LEFT JOIN blocked_users B2 ON (B2.blocked_id = %s AND B2.blocker_id = P.user_id)
-                    WHERE U.privacy = 'Public' AND U.account_status != 'Deleted' AND (P.title LIKE %s OR P.content LIKE %s)
-                    AND B1.blocked_id IS NULL
-                    AND B2.blocked_id IS NULL
-                    ORDER BY P.date_created DESC
-                """
-                g.cursor.execute(query, (current_user.id, current_user.id, '%' + search_query + '%', '%' + search_query + '%'))
+                g.cursor.execute(query['select_posts_join_users_filter_blockage_status_privacy_search'], (current_user.id, current_user.id, '%'+search_query+'%', '%'+search_query+'%'))
                 posts = g.cursor.fetchall()
-                query = """
-                    SELECT *
-                    FROM user_accounts U
-                    LEFT JOIN blocked_users B ON (B.blocked_id = %s AND B.blocker_id = U.id)
-                    WHERE display_name LIKE %s AND B.blocked_id IS NULL
-                    ORDER BY display_name
-                """
-                g.cursor.execute(query, (current_user.id, '%' + search_query + '%',))
+                g.cursor.execute(query['select_users_filter_blockage_search'], (current_user.id, '%'+search_query+'%',))
                 users = g.cursor.fetchall()
             else:
-                query = """
-                    SELECT P.id, P.title, P.content, P.date_created,
-                    U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
-                    FROM posts P
-                    JOIN user_accounts U ON P.user_id = U.id
-                    WHERE U.privacy = 'Public' AND account_status != 'Deleted' AND (P.title LIKE %s OR P.content LIKE %s)
-                    ORDER BY P.date_created DESC
-                """
-                g.cursor.execute(query, ('%' + search_query + '%', '%' + search_query + '%'))
+                g.cursor.execute(query['select_posts_join_users_filter_status_privacy_search'], ('%'+search_query+'%', '%'+search_query+'%'))
                 posts = g.cursor.fetchall()
-                query = """
-                    SELECT *
-                    FROM user_accounts
-                    WHERE display_name LIKE %s
-                    ORDER BY display_name
-                """
-                g.cursor.execute(query, ('%' + search_query + '%',))
+                g.cursor.execute(query['select_users_filter_search'], ('%'+search_query+'%',))
                 users = g.cursor.fetchall()
             return render_template('search.html', form=form, query=search_query, users=users, posts=posts)
         # If the search field is empty, return a 204 status code
@@ -185,8 +132,7 @@ def signup():
         form = SignupForm()
         if form.validate_on_submit():
             # Check if the user with the same display name exists or not
-            query = 'SELECT * FROM user_accounts WHERE display_name = %s'
-            g.cursor.execute(query, (form.display_name_f.data,))
+            g.cursor.execute(query['select_user_by_display_name'], (form.display_name_f.data,))
             users_with_same_name = g.cursor.fetchone()
             if not users_with_same_name is None:
                 flash("An existing account with this display name already exists. Please select a unique display name.")
@@ -198,11 +144,7 @@ def signup():
             # If everything is fine, register the user
             else:
                 hashed_password = generate_password_hash(form.password_f.data)
-                query = """
-                    INSERT INTO user_accounts (display_name, email_address, hashed_password, signup_date)
-                    VALUES (%s, %s, %s, NOW())
-                """
-                g.cursor.execute(query, (form.display_name_f.data, form.email_f.data, hashed_password))
+                g.cursor.execute(query['insert_user_signup'], (form.display_name_f.data, form.email_f.data, hashed_password))
                 g.db.commit()
                 flash("Account registered. You may log in.")
                 return redirect(url_for('login'))
@@ -215,15 +157,13 @@ def signup():
 @app.route('/login', methods=['GET','POST'])
 def login():
     try:
-
         # Do not let a logged in user to access login route
         if current_user.is_authenticated:
             return redirect(url_for('profile'))
         form = LoginForm()
         if form.validate_on_submit():
             # Check if the user exists and the password is correct
-            query = 'SELECT * FROM user_accounts WHERE display_name = %s'
-            g.cursor.execute(query, (form.display_name_f.data,))
+            g.cursor.execute(query['select_user_by_display_name'], (form.display_name_f.data,))
             user = g.cursor.fetchone()
             if not (user is not None and check_password_hash(user[3], form.password_f.data)):
                 flash("Login failed. Please check your credentials.")
@@ -261,8 +201,7 @@ def logout():
 def profile():
     try:
         # Get the current logged in user's details
-        query = 'SELECT * FROM user_accounts WHERE id = %s'
-        g.cursor.execute(query, (current_user.id,))
+        g.cursor.execute(query['select_user_by_id'], (current_user.id,))
         user_details = g.cursor.fetchone()
         if not user_details:
             flash("User not found.")
@@ -280,32 +219,17 @@ def profile():
             "deleted_date": user_details[11]
         }
         # Get the user's age
-        query = """
-            SELECT TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) - (DATE_FORMAT(CURDATE(), '%m%d') < DATE_FORMAT(date_of_birth, '%m%d')) AS age
-            FROM user_accounts
-            WHERE id = %s
-        """
-        g.cursor.execute(query, (current_user.id,))
+        g.cursor.execute(query['select_user_age_by_id'], (current_user.id,))
         user_info["age"] = g.cursor.fetchone()[0]
         # Get the user's days until their account is permanently deleted
         if user_info["account_status"] == "Deleted":
             remaining_days = (user_info['deleted_date'] + timedelta(days=7) - datetime.now()).days
             user_info["days_until_deletion"] = remaining_days
         # Get the current logged in user's posts
-        query = """
-            SELECT *
-            FROM posts
-            WHERE user_id = %s
-            ORDER BY date_created DESC
-        """
-        g.cursor.execute(query, (current_user.id,))
+        g.cursor.execute(query['select_user_posts_by_id_order_date'], (current_user.id,))
         user_info["posts"] = g.cursor.fetchall()
         # Get the current logged in user's follower count
-        query = """
-            SELECT COUNT(*) FROM followers
-            WHERE followed_id = %s
-        """
-        g.cursor.execute(query, (current_user.id,))
+        g.cursor.execute(query['select_user_follow_count_by_id'], (current_user.id,))
         user_info["followers"] = g.cursor.fetchone()[0]
         return render_template('profile.html', user=user_info)
     except Exception as e:
@@ -319,8 +243,7 @@ def profile():
 def profile_edit():
     try:
         form = EditProfileForm()
-        query = 'SELECT * FROM user_accounts WHERE id = %s'
-        g.cursor.execute(query, (current_user.id,))
+        g.cursor.execute(query['select_user_by_id'], (current_user.id,))
         user_details = g.cursor.fetchone()
         user_info = {
             "display_name": user_details[1],
@@ -348,18 +271,7 @@ def profile_edit():
             form.privacy_f.data = user_info["privacy"]
         # Update user details
         if form.validate_on_submit():
-            query = """
-                UPDATE user_accounts SET
-                    display_name = %s,
-                    email_address = %s,
-                    pfp_url = %s,
-                    about = %s,
-                    date_of_birth = %s,
-                    location = %s,
-                    privacy = %s
-                WHERE id = %s
-            """
-            g.cursor.execute(query, (
+            g.cursor.execute(query['update_user_profile'], (
                 form.display_name_f.data,
                 form.email_f.data,
                 form.pfp_url_f.data,
@@ -386,8 +298,7 @@ def profile_password_change():
         form = PasswordChangeForm()
         if form.validate_on_submit():
             # Check if the old password is correct
-            query = 'SELECT hashed_password FROM user_accounts WHERE id = %s'
-            g.cursor.execute(query, (current_user.id,))
+            g.cursor.execute(query['select_user_hashed_password_by_id'], (current_user.id,))
             hashed_password = g.cursor.fetchone()[0]
             if not check_password_hash(hashed_password, form.old_password_f.data):
                 flash("Old password is incorrect. Please try again.")
@@ -401,8 +312,7 @@ def profile_password_change():
                 return render_template('profile_password_change.html', form=form)
             # Update the password
             new_hashed_password = generate_password_hash(form.new_password_f.data)
-            query = 'UPDATE user_accounts SET hashed_password = %s WHERE id = %s'
-            g.cursor.execute(query, (new_hashed_password, current_user.id))
+            g.cursor.execute(query['update_user_password'], (new_hashed_password, current_user.id))
             g.db.commit()
             flash("Password changed.")
             return redirect(url_for('profile'))
@@ -421,12 +331,7 @@ def profile_delete():
             flash("Your account is already deleted or is scheduled to be deleted.")
             return redirect(request.referrer or url_for('index'))
         # Soft delete the account
-        query = """
-            UPDATE user_accounts
-            SET account_status = 'Deleted', deleted_date = NOW()
-            WHERE id = %s
-        """
-        g.cursor.execute(query, (current_user.id,))
+        g.cursor.execute(query['soft_delete_user_by_id'], (current_user.id,))
         g.db.commit()
         flash("Account soft deleted. It will be permanently deleted after 7 days.")
     except Exception as e:
@@ -443,12 +348,7 @@ def profile_recover():
             flash("Your account is not deleted.")
             return redirect(request.referrer or url_for('index'))
         # Recover the account
-        query = """
-            UPDATE user_accounts
-            SET account_status = 'Active', deleted_date = NULL
-            WHERE id = %s
-        """
-        g.cursor.execute(query, (current_user.id,))
+        g.cursor.execute(query['recover_user_by_id'], (current_user.id,))
         g.db.commit()
         flash("Account recovered.")
     except Exception as e:
@@ -465,8 +365,7 @@ def profile_view(user_id):
             if current_user.id == user_id:
                 return redirect(url_for('profile'))
         # Get the user details
-        query = 'SELECT * FROM user_accounts WHERE id = %s'
-        g.cursor.execute(query, (user_id,))
+        g.cursor.execute(query['select_user_by_id'], (user_id,))
         user_details = g.cursor.fetchone()
         if not user_details:
             flash("User not found.")
@@ -484,56 +383,29 @@ def profile_view(user_id):
             "privacy": user_details[10]
         }
         # Get the user's age
-        query = """
-            SELECT TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) - (DATE_FORMAT(CURDATE(), '%m%d') < DATE_FORMAT(date_of_birth, '%m%d')) AS age
-            FROM user_accounts
-            WHERE id = %s
-        """
-        g.cursor.execute(query, (user_id,))
+        g.cursor.execute(query['select_user_age_by_id'], (user_id,))
         user_info["age"] = g.cursor.fetchone()[0]
         # Get the user's posts
-        query = """
-            SELECT *
-            FROM posts
-            WHERE user_id = %s
-            ORDER BY date_created DESC
-        """
-        g.cursor.execute(query, (user_id,))
+        g.cursor.execute(query['select_user_posts_by_id_order_date'], (user_id,))
         user_info["posts"] = g.cursor.fetchall()
         # Get the user's follower count
-        query = """
-            SELECT COUNT(*) FROM followers
-            WHERE followed_id = %s
-        """
-        g.cursor.execute(query, (user_id,))
+        g.cursor.execute(query['select_user_follow_count_by_id'], (user_id,))
         user_info["followers"] = g.cursor.fetchone()[0]
         # Check if the user is following the user whose profile is being viewed
         if current_user.is_authenticated:
-            query = """
-                SELECT * FROM followers
-                WHERE follower_id = %s AND followed_id = %s
-            """
-            g.cursor.execute(query, (current_user.id, user_id))
+            g.cursor.execute(query['select_follow_instance_by_ids'], (current_user.id, user_id))
             if g.cursor.fetchone():
                 user_info["is_already_followed"] = True
             else:
                 user_info["is_already_followed"] = False
         # Check if the user has blocked the user whose profile is being viewed and vice versa
         if current_user.is_authenticated:
-            query = """
-                SELECT 1 FROM blocked_users
-                WHERE blocker_id = %s AND blocked_id = %s
-            """
-            g.cursor.execute(query, (current_user.id, user_id))
+            g.cursor.execute(query['select_blocked_instance_by_ids'], (current_user.id, user_id))
             if g.cursor.fetchone():
                 user_info["is_blocked"] = True
             else:
                 user_info["is_blocked"] = False
-            query = """
-                SELECT 1 FROM blocked_users
-                WHERE blocker_id = %s AND blocked_id = %s
-            """
-            g.cursor.execute(query, (user_id, current_user.id))
+            g.cursor.execute(query['select_blocked_instance_by_ids'], (user_id, current_user.id))
             if g.cursor.fetchone():
                 flash("You have been blocked by this user.")
                 return redirect(request.referrer or url_for('index'))
@@ -543,6 +415,65 @@ def profile_view(user_id):
         flash("An error occurred while fetching the user's profile.", "error")
         return redirect(request.referrer or url_for('index'))
 
+# Allowing users to follow other users
+@app.route('/follow/<int:followed_id>')
+@login_required
+def follow(followed_id):
+    try:
+        # Do not let the user follow a user if their account is deleted
+        if current_user.account_status == "Deleted":
+            flash("Your account is already deleted or is scheduled to be deleted. You can't follow a user.")
+            return redirect(request.referrer or url_for('index'))
+        follower_id = current_user.id
+        # Don't allow the user to follow themselves lol
+        if follower_id == followed_id:
+            return Response(status=204)
+        g.cursor.execute(query['select_follow_instance_by_ids'], (follower_id, followed_id))
+        # Don't let the user follow a user if they are already following them
+        if g.cursor.fetchone():
+            return Response(status=204)
+        # Don't let the user follow a user if they are blocked
+        g.cursor.execute(query['select_blocked_instance_by_ids'], (followed_id, follower_id))
+        if g.cursor.fetchone():
+            flash("You cannot follow this user.")
+            return redirect(request.referrer or url_for('index'))
+        # Follow the user
+        else:
+            g.cursor.execute(query['insert_follow_instance_by_ids'], (follower_id, followed_id))
+            g.db.commit()
+            return redirect(request.referrer or url_for('index'))
+    except Exception as e:
+        print(e)
+        flash("An error occurred while trying to follow the user.", "error")
+        return redirect(request.referrer or url_for('index'))
+    
+# Allowing users to unfollow other users
+@app.route('/unfollow/<int:followed_id>')
+@login_required
+def unfollow(followed_id):
+    try:
+        # Do not let the user unfollow a user if their account is deleted
+        if current_user.account_status == "Deleted":
+            flash("Your account is already deleted or is scheduled to be deleted. You can't unfollow a user.")
+            return redirect(request.referrer or url_for('index'))
+        follower_id = current_user.id
+        # Don't allow the user to unfollow themselves lol
+        if follower_id == followed_id:
+            return Response(status=204)
+        g.cursor.execute(query['select_follow_instance_by_ids'], (follower_id, followed_id))
+        # Don't let the user unfollow a user if they are not following them
+        if not g.cursor.fetchone():
+            return Response(status=204)
+        # Unfollow the user
+        else:
+            g.cursor.execute(query['delete_follow_instance_by_ids'], (follower_id, followed_id))
+            g.db.commit()
+            return redirect(request.referrer or url_for('index'))
+    except Exception as e:
+        print(e)
+        flash("An error occurred while trying to unfollow the user.", "error")
+        return redirect(request.referrer or url_for('index'))
+    
 # Block a user
 @app.route('/profile/user/block<int:user_id>')
 @login_required
@@ -557,26 +488,14 @@ def block_user(user_id):
             flash("You cannot block yourself.")
             return redirect(request.referrer or url_for('index'))
         # Check if the user is already blocked
-        query = """
-            SELECT * FROM blocked_users
-            WHERE blocker_id = %s AND blocked_id = %s
-        """
-        g.cursor.execute(query, (current_user.id, user_id))
+        g.cursor.execute(query['select_blocked_instance_by_ids'], (current_user.id, user_id))
         if g.cursor.fetchone():
             flash("User is already blocked.")
             return redirect(request.referrer or url_for('index'))
         # Block the user
-        query = """
-            INSERT INTO blocked_users (blocker_id, blocked_id, date_blocked)
-            VALUES (%s, %s, NOW())
-        """
-        g.cursor.execute(query, (current_user.id, user_id))
+        g.cursor.execute(query['insert_block_instance_by_ids'], (current_user.id, user_id))
         # Unfollow the user
-        query = """
-            DELETE FROM followers
-            WHERE follower_id = %s AND followed_id = %s
-        """
-        g.cursor.execute(query, (current_user.id, user_id))
+        g.cursor.execute(query['delete_follow_instance_by_ids'], (current_user.id, user_id))
         g.db.commit()
     except Exception as e:
         print(e)
@@ -593,20 +512,12 @@ def unblock_user(user_id):
             flash("Your account is already deleted or is scheduled to be deleted. You can't unblock a user.")
             return redirect(request.referrer or url_for('index'))
         # Check if the user is already unblocked
-        query = """
-            SELECT * FROM blocked_users
-            WHERE blocker_id = %s AND blocked_id = %s
-        """
-        g.cursor.execute(query, (current_user.id, user_id))
+        g.cursor.execute(query['select_blocked_instance_by_ids'], (current_user.id, user_id))
         if not g.cursor.fetchone():
             flash("User is not blocked.")
             return redirect(request.referrer or url_for('index'))
         # Unblock the user
-        query = """
-            DELETE FROM blocked_users
-            WHERE blocker_id = %s AND blocked_id = %s
-        """
-        g.cursor.execute(query, (current_user.id, user_id))
+        g.cursor.execute(query['delete_blocked_instance_by_ids'], (current_user.id, user_id))
         g.db.commit()
     except Exception as e:
         print(e)
@@ -625,22 +536,11 @@ def post_create():
         form = PostForm()
         # Insert the post into the database, making sure that the authenticated user adds the post
         if form.validate_on_submit():
-            query = """
-                INSERT INTO POSTS (user_id, title, content, date_created)
-                VALUES (%s, %s, %s, NOW())
-            """
-            g.cursor.execute(query, (current_user.id, form.title_f.data, form.contents_f.data))
+            g.cursor.execute(query['insert_post'], (current_user.id, form.title_f.data, form.contents_f.data))
             g.db.commit()
             flash("Post created.")
-            # Redirect to the newly created post
-            query = """
-                SELECT id
-                FROM posts
-                WHERE user_id = %s AND title = %s AND content = %s
-            """
-            g.cursor.execute(query, (current_user.id, form.title_f.data, form.contents_f.data))
-            post_id = g.cursor.fetchone()
-            return redirect(url_for('post_view', post_id=post_id[0]))
+            # Redirect to profile page
+            return redirect(url_for('profile'))
         return render_template('post_create.html', form=form)
     except Exception as e:
         print(e)
@@ -652,43 +552,25 @@ def post_create():
 def post_view(post_id):
     try:
         # Get the post details
-        query = 'SELECT * FROM posts WHERE id = %s'
-        g.cursor.execute(query, (post_id,))
+        g.cursor.execute(query['select_post_by_id'], (post_id,))
         post = g.cursor.fetchone()
         if not post:
             flash("Post not found.")
             return redirect(url_for('index'))
         # Check if the owner has blocked the user or the user has blocked the owner
         if current_user.is_authenticated:
-            query = """
-                SELECT 1 FROM blocked_users
-                WHERE (blocker_id = %s AND blocked_id = %s)
-                OR (blocker_id = %s AND blocked_id = %s)
-            """
-            g.cursor.execute(query, (post[1], current_user.id, current_user.id, post[1]))
+            g.cursor.execute(query['select_block_existence'], (post[1], current_user.id, current_user.id, post[1]))
             if g.cursor.fetchone():
                 flash("You cannot view this post.")
                 return redirect(request.referrer or url_for('index'))
         # Get the endorsement and condemnation count of the post
-        query = """
-            SELECT COUNT(*) FROM endorsements
-            WHERE post_id = %s AND endorsement_type = 'Endorsement'
-        """
-        g.cursor.execute(query, (post_id,))
+        g.cursor.execute(query['select_endorsement_count'], (post_id,))
         post_endorsements = g.cursor.fetchone()[0]
-        query = """
-            SELECT COUNT(*) FROM endorsements
-            WHERE post_id = %s AND endorsement_type = 'Condemnation'
-        """
-        g.cursor.execute(query, (post_id,))
+        g.cursor.execute(query['select_condemnation_count'], (post_id,))
         post_condemnations = g.cursor.fetchone()[0]
         # Check if the user has already endorsed or condemned the post
         if current_user.is_authenticated:
-            query = """
-                SELECT * FROM endorsements
-                WHERE user_id = %s AND post_id = %s
-            """
-            g.cursor.execute(query, (current_user.id, post_id))
+            g.cursor.execute(query['select_endorsement_by_post_user'], (current_user.id, post_id))
             endorsement = g.cursor.fetchone()
             if endorsement:
                 user_endorsement = endorsement[3]
@@ -706,7 +588,6 @@ def post_view(post_id):
                 INSERT INTO comments (post_id, user_id, content, date_created)
                 VALUES (%s, %s, %s, NOW())
             """
-            print(query) # the code never reaches here... why?
             g.cursor.execute(query, (post_id, current_user.id, form.contents_f.data))
             g.db.commit()
             form.contents_f.data = ""
@@ -714,40 +595,15 @@ def post_view(post_id):
             return redirect(request.referrer or url_for('index'))
         # Get the comments on the post if any, whilst also checking blocking conditions
         if current_user.is_authenticated:
-            query = """
-                SELECT C.id, C.content, C.date_created,
-                U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
-                FROM comments C
-                JOIN user_accounts U ON C.user_id = U.id
-                LEFT JOIN blocked_users B1 ON (B1.blocked_id = C.user_id AND B1.blocker_id = %s)
-                LEFT JOIN blocked_users B2 ON (B2.blocked_id = %s AND B2.blocker_id = C.user_id)
-                WHERE C.post_id = %s AND U.account_status != 'Deleted'
-                AND B1.blocked_id IS NULL
-                AND B2.blocked_id IS NULL
-                ORDER BY C.date_created DESC
-            """
-            g.cursor.execute(query, (current_user.id, current_user.id, post_id))
+            g.cursor.execute(query['select_post_comments_filter_blockage_status_privacy'], (current_user.id, current_user.id, post_id))
         else:
-            query = """
-                SELECT C.id, C.content, C.date_created,
-                U.id, U.display_name, U.account_status, U.pfp_url, U.privacy
-                FROM comments C
-                JOIN user_accounts U ON C.user_id = U.id
-                WHERE C.post_id = %s AND U.account_status != 'Deleted'
-                ORDER BY C.date_created DESC
-            """
-            g.cursor.execute(query, (post_id,))
+            g.cursor.execute(query['select_post_comments_filter_status_privacy'], (post_id,))
         post_comments = g.cursor.fetchall()
         # Get the number of comments on the post
-        query = """
-            SELECT COUNT(*) FROM comments
-            WHERE post_id = %s
-        """
-        g.cursor.execute(query, (post_id,))
+        g.cursor.execute(query['select_comment_count_on_post'], (post_id,))
         comment_count = g.cursor.fetchone()[0]
         # Get the privacy of the user who created the post and use that accordingly
-        query = 'SELECT * FROM user_accounts WHERE id = %s'
-        g.cursor.execute(query, (post[1],))
+        g.cursor.execute(query['select_user_by_id'], (post[1],))
         user = g.cursor.fetchone()
         if user[10] == "Private":
             if current_user.is_authenticated:
@@ -773,8 +629,7 @@ def post_edit(post_id):
     try:
         form = EditPostForm()
         # Get the post details
-        query = 'SELECT * FROM posts WHERE id = %s'
-        g.cursor.execute(query, (post_id,))
+        g.cursor.execute(query['select_post_by_id'], (post_id,))
         post = g.cursor.fetchone()
         # Check if the post exists and the user is authorized to edit it
         if not post:
@@ -789,12 +644,7 @@ def post_edit(post_id):
             form.contents_f.data = post[3]
         # Update the post
         if form.validate_on_submit():
-            query = """
-                UPDATE posts
-                SET title = %s, content = %s
-                WHERE id = %s
-            """
-            g.cursor.execute(query, (form.title_f.data, form.contents_f.data, post_id))
+            g.cursor.execute(query['update_post'], (form.title_f.data, form.contents_f.data, post_id))
             g.db.commit()
             flash("Post updated.")
             return redirect(url_for('post_view', post_id=post_id))
@@ -810,8 +660,7 @@ def post_edit(post_id):
 def post_delete(post_id):
     try:
         # Get the post details
-        query = 'SELECT * FROM posts WHERE id = %s'
-        g.cursor.execute(query, (post_id,))
+        g.cursor.execute(query['select_post_by_id'], (post_id,))
         post = g.cursor.fetchone()
         # Check if the post exists and the user is authorized to delete it
         if not post:
@@ -821,8 +670,7 @@ def post_delete(post_id):
             flash("You are not authorized to delete this post.", "error")
             return redirect(request.referrer or url_for('index'))
         # Delete the post
-        query = 'DELETE FROM posts WHERE id = %s'
-        g.cursor.execute(query, (post_id,))
+        g.cursor.execute(query['delete_post_by_id'], (post_id,))
         g.db.commit()
         flash("Post deleted.")
         return redirect(request.referrer or url_for('index'))
@@ -844,34 +692,17 @@ def endorse(post_id, endorsement_type):
         if endorsement_type not in ['Condemnation', 'Endorsement']:
             return redirect(request.referrer or url_for('index'))
         # Check if the user has already endorsed this post
-        query = """
-            SELECT * FROM endorsements
-            WHERE user_id = %s AND post_id = %s
-        """
-        g.cursor.execute(query, (current_user.id, post_id))
+        g.cursor.execute(query['select_endorsement_by_post_user'], (current_user.id, post_id))
         endorsement = g.cursor.fetchone()
         # Update the endorsement type if it already exists and is different from the new endorsement type
         if endorsement and endorsement[3] != endorsement_type:
-            query = """
-                UPDATE endorsements
-                SET endorsement_type = %s, date_endorsed = NOW()
-                WHERE id = %s
-            """
-            g.cursor.execute(query, (endorsement_type, endorsement[0]))
+            g.cursor.execute(query['update_endorsement_type'], (endorsement_type, endorsement[0]))
         # Remove endorsement if already exists 
         elif endorsement and endorsement[3] == endorsement_type:
-            query = """
-                DELETE FROM endorsements
-                WHERE id = %s
-            """
-            g.cursor.execute(query, (endorsement[0],))
+            g.cursor.execute(query['delete_endorsement_by_id'], (endorsement[0],))
         # Insert a new endorsement record if it doesn't exist
         elif not endorsement:
-            query = """
-                INSERT INTO endorsements (user_id, post_id, endorsement_type, date_endorsed)
-                VALUES (%s, %s, %s, NOW())
-            """
-            g.cursor.execute(query, (current_user.id, post_id, endorsement_type))
+            g.cursor.execute(query['insert_endorsement'], (current_user.id, post_id, endorsement_type))
         g.db.commit()
         return redirect(request.referrer or url_for('index'))
     except Exception as e:
@@ -890,11 +721,7 @@ def comment_edit(comment_id):
             return redirect(request.referrer or url_for('index'))
         form = EditCommentForm()
         # Get the comment details
-        query = """
-            SELECT * FROM comments
-            WHERE id = %s
-        """
-        g.cursor.execute(query, (comment_id,))
+        g.cursor.execute(query['select_comment_by_id'], (comment_id,))
         comment = g.cursor.fetchone()
         # If there is no such comment, how can it be edited?
         if not comment:
@@ -909,12 +736,7 @@ def comment_edit(comment_id):
             form.contents_f.data = comment[4]
         # Update the comment
         if form.validate_on_submit():
-            query = """
-                UPDATE comments
-                SET content = %s
-                WHERE id = %s
-            """
-            g.cursor.execute(query, (form.contents_f.data, comment_id))
+            g.cursor.execute(query['update_comment_content'], (form.contents_f.data, comment_id))
             g.db.commit()
             flash("Comment updated.")
             return redirect(url_for('post_view', post_id=comment[1]))
@@ -933,11 +755,7 @@ def comment_delete(comment_id):
             flash('You must be logged in to delete your comment.')
             return redirect(request.referrer or url_for('index'))
         # Get the comment details
-        query = """
-            SELECT * FROM comments
-            WHERE id = %s
-        """
-        g.cursor.execute(query, (comment_id,))
+        g.cursor.execute(query['select_comment_by_id'], (comment_id,))
         comment = g.cursor.fetchone()
         # If there is no such comment, how can it be edited?
         if not comment:
@@ -948,93 +766,13 @@ def comment_delete(comment_id):
             flash('You are not authorized to edit this comment.')
             return redirect(request.referrer or url_for('index'))
         # Delete the post
-        query = 'DELETE FROM comments WHERE id = %s'
-        g.cursor.execute(query, (comment_id,))
+        g.cursor.execute(query['delete_comment_by_id'], (comment_id,))
         g.db.commit()
         flash("Comment deleted.")
         return redirect(request.referrer or url_for('index'))
     except Exception as e:
         print(e)
         flash("An error occurred while deleting the comment.", "error")
-        return redirect(request.referrer or url_for('index'))
-
-# Allowing users to follow other users
-@app.route('/follow/<int:followed_id>')
-@login_required
-def follow(followed_id):
-    try:
-        # Do not let the user follow a user if their account is deleted
-        if current_user.account_status == "Deleted":
-            flash("Your account is already deleted or is scheduled to be deleted. You can't follow a user.")
-            return redirect(request.referrer or url_for('index'))
-        follower_id = current_user.id
-        # Don't allow the user to follow themselves lol
-        if follower_id == followed_id:
-            return Response(status=204)
-        query = """
-            SELECT * FROM followers
-            WHERE follower_id = %s AND followed_id = %s
-        """
-        g.cursor.execute(query, (follower_id, followed_id))
-        # Don't let the user follow a user if they are already following them
-        if g.cursor.fetchone():
-            return Response(status=204)
-        # Don't let the user follow a user if they are blocked
-        query = """
-            SELECT 1 FROM blocked_users
-            WHERE blocker_id = %s AND blocked_id = %s
-        """
-        g.cursor.execute(query, (followed_id, follower_id))
-        if g.cursor.fetchone():
-            flash("You cannot follow this user.")
-            return redirect(request.referrer or url_for('index'))
-        # Follow the user
-        else:
-            query = """
-                INSERT INTO followers (follower_id, followed_id)
-                VALUES (%s, %s)
-            """
-            g.cursor.execute(query, (follower_id, followed_id))
-            g.db.commit()
-            return redirect(request.referrer or url_for('index'))
-    except Exception as e:
-        print(e)
-        flash("An error occurred while trying to follow the user.", "error")
-        return redirect(request.referrer or url_for('index'))
-    
-# Allowing users to unfollow other users
-@app.route('/unfollow/<int:followed_id>')
-@login_required
-def unfollow(followed_id):
-    try:
-        # Do not let the user unfollow a user if their account is deleted
-        if current_user.account_status == "Deleted":
-            flash("Your account is already deleted or is scheduled to be deleted. You can't unfollow a user.")
-            return redirect(request.referrer or url_for('index'))
-        follower_id = current_user.id
-        # Don't allow the user to unfollow themselves lol
-        if follower_id == followed_id:
-            return Response(status=204)
-        query = """
-            SELECT * FROM followers
-            WHERE follower_id = %s AND followed_id = %s
-        """
-        g.cursor.execute(query, (follower_id, followed_id))
-        # Don't let the user unfollow a user if they are not following them
-        if not g.cursor.fetchone():
-            return Response(status=204)
-        # Unfollow the user
-        else:
-            query = """
-                DELETE FROM followers
-                WHERE follower_id = %s AND followed_id = %s
-            """
-            g.cursor.execute(query, (follower_id, followed_id))
-            g.db.commit()
-            return redirect(request.referrer or url_for('index'))
-    except Exception as e:
-        print(e)
-        flash("An error occurred while trying to unfollow the user.", "error")
         return redirect(request.referrer or url_for('index'))
     
 # Show all conversations of the current user
@@ -1043,20 +781,7 @@ def unfollow(followed_id):
 def messages():
     try:
         # Fetch conversations for the current user
-        query = """
-            SELECT U.id, U.display_name, U.pfp_url, MAX(M.date_sent) AS last_message_date
-            FROM messages M
-            JOIN user_accounts U ON (M.sender_id = U.id OR M.receiver_id = U.id)
-            LEFT JOIN blocked_users B1 ON (M.sender_id = B1.blocker_id AND M.receiver_id = B1.blocked_id)
-            LEFT JOIN blocked_users B2 ON (M.receiver_id = B2.blocker_id AND M.sender_id = B2.blocked_id)
-            WHERE (M.sender_id = %s OR M.receiver_id = %s)
-            AND U.id != %s
-            AND B1.id IS NULL
-            AND B2.id IS NULL
-            GROUP BY U.id
-            ORDER BY last_message_date DESC
-        """
-        g.cursor.execute(query, (current_user.id, current_user.id, current_user.id))
+        g.cursor.execute(query['select_message_conversation_filter_blockage_status_order_date'], (current_user.id, current_user.id, current_user.id))
         conversations = g.cursor.fetchall()
         return render_template('messages.html', conversations=conversations)
     except Exception as e:
@@ -1072,12 +797,7 @@ def can_send_message(sender_id, receiver_id):
             flash("You cannot message yourself.")
             return False
         # Check the acount_status and privacy of both users
-        query = """
-            SELECT account_status, privacy
-            FROM user_accounts
-            WHERE id IN (%s, %s)
-        """
-        g.cursor.execute(query, (sender_id, receiver_id))
+        g.cursor.execute(query['select_sender_receiver_status_privacy'], (sender_id, receiver_id))
         statuses = g.cursor.fetchall()
         if not statuses or len(statuses) != 2:
             flash("User not found.")
@@ -1091,12 +811,7 @@ def can_send_message(sender_id, receiver_id):
             flash("A private user cannot send or receive messages.")
             return False
         # Check if the receiver has blocked the sender
-        query = """
-            SELECT 1
-            FROM blocked_users
-            WHERE blocker_id = %s AND blocked_id = %s
-        """
-        g.cursor.execute(query, (receiver_id, sender_id))
+        g.cursor.execute(query['select_blocked_instance_by_ids'], (receiver_id, sender_id))
         if g.cursor.fetchone():
             flash("You cannot message this user.")
             return False
@@ -1110,13 +825,9 @@ def can_send_message(sender_id, receiver_id):
 # Helper function to send a message
 def send_message(sender_id, receiver_id, content):
     try:
+        # Send the message
         if can_send_message(sender_id, receiver_id) == True:
-            # Send the message
-            query = """
-                INSERT INTO messages (sender_id, receiver_id, content, date_sent)
-                VALUES (%s, %s, %s, NOW())
-            """
-            g.cursor.execute(query, (sender_id, receiver_id, content))
+            g.cursor.execute(query['insert_message'], (sender_id, receiver_id, content))
             g.db.commit()
             flash('Message sent.')
     except Exception as e:
@@ -1130,43 +841,33 @@ def message_conversation(receiver_id):
     try:
         form = MessageForm()
         # Fetch the conversation between the current user and the specified user
-        query = """
-            SELECT M.id, M.sender_id, M.receiver_id, M.content, M.date_sent, U.display_name, U.pfp_url
-            FROM messages M
-            JOIN user_accounts U ON M.sender_id = U.id
-            WHERE (M.sender_id = %s AND M.receiver_id = %s)
-            OR (M.sender_id = %s AND M.receiver_id = %s)
-            ORDER BY M.date_sent
-        """
-        g.cursor.execute(query, (current_user.id, receiver_id, receiver_id, current_user.id))
+        g.cursor.execute(query['select_messages_of_users_order_date'], (current_user.id, receiver_id, receiver_id, current_user.id))
         messages = g.cursor.fetchall()
         # Fetch the display name and pfp of the receiver
-        query = """
-            SELECT id, display_name, pfp_url
-            FROM user_accounts
-            WHERE id = %s
-        """
-        g.cursor.execute(query, (receiver_id,))
-        receiver_info = g.cursor.fetchone()
+        g.cursor.execute(query['select_user_by_id'], (receiver_id,))
+        receiver = g.cursor.fetchone()
         # Send a message
         if form.validate_on_submit():
             send_message(current_user.id, receiver_id, form.contents_f.data)
             form.contents_f.data = ""
             return redirect(url_for('message_conversation', receiver_id=receiver_id))
-        return render_template('message_conversation.html', messages=messages, form=form, receiver=receiver_info)
+        return render_template('message_conversation.html', messages=messages, form=form, receiver=receiver)
     except Exception as e:
         print(e)
         flash("An error occurred while fetching the conversation.", "error")
         return redirect(url_for('messages'))
 
-# Admin routes (temporary routes maybe?)
+# Admin, aka me hehe, routes (temporary routes maybe?)
 # Shows all users
 @app.route('/users')
+@login_required
 def users():
     try:
-        query = 'SELECT * FROM user_accounts ORDER BY signup_date'
-        g.cursor.execute(query)
-        all_users = g.cursor.fetchall() # This is only for testing purposes
+        if current_user.display_name != credentials['admin_display_name']:
+            flash("You are not authorized to view all users.")
+            return redirect(request.referrer or url_for('index'))
+        g.cursor.execute(query['select_all_users'])
+        all_users = g.cursor.fetchall()
         return render_template('users.html', all_users=all_users)
     except Exception as e:
         print(e)
@@ -1175,16 +876,18 @@ def users():
 
 # Delete users
 @app.route('/users/delete/<int:user_id>')
+@login_required
 def users_delete(user_id):
     try:
-        query = 'DELETE FROM user_accounts WHERE id = %s'
-        g.cursor.execute(query, (user_id,))
+        if current_user.display_name != credentials['admin_display_name']:
+            flash("You are not authorized to delete users.")
+            return redirect(request.referrer or url_for('index'))
+        g.cursor.execute(query['delete_user_by_id'], (user_id,))
         g.db.commit()
     except Exception as e:
         print(e)
         flash("An error occurred while deleting the user.", "error")
     return redirect(url_for('users'))
-
 
 # Error handlers
 @app.errorhandler(404)
