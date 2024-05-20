@@ -20,7 +20,7 @@
         
         <div class="profile-pfp">
             {% if not user["pfp_url"] %}
-            <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" alt="Profile Picture Default">
+            <img src="{{ url_for('static', filename='images/default_pfp.jpg') }}" alt="Profile Picture Default">
             {% else %}
             <img src="{{ user['pfp_url'] }}" alt="Profile Picture Default">
             {% endif %}

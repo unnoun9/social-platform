@@ -10,7 +10,7 @@
 		<div>
             <a href="{{ url_for('profile_view', user_id=receiver[0]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
                 {% if not receiver[6] %}
-                <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ receiver[1] }}'s profile picture">
+                <img src="{{ url_for('static', filename='images/default_pfp.jpg') }}" class="nav-user-pfp" alt="{{ receiver[1] }}'s profile picture">
                 {% else %}
                 <img src="{{ receiver[6] }}" class="nav-user-pfp" alt="{{ receiver[1] }}'s profile picture">
                 {% endif %}

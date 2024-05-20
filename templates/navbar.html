@@ -15,7 +15,7 @@
 				{% if current_user.pfp_url %}
 				<img src="{{ current_user.pfp_url }}" class="nav-user-pfp">
 				{% else %}
-				<img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp">
+				<img src="{{ url_for('static', filename='images/default_pfp.jpg') }}" class="nav-user-pfp">
 				{% endif %}
 				{{ current_user.display_name }}
 			</a>
@@ -57,7 +57,7 @@
 							{% if current_user.pfp_url %}
 							<img src="{{ current_user.pfp_url }}" class="nav-user-pfp">
 							{% else %}
-							<img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp">
+							<img src="{{ url_for('static', filename='images/default_pfp.jpg') }}" class="nav-user-pfp">
 							{% endif %}
 							{{ current_user.display_name }}
 						</a>

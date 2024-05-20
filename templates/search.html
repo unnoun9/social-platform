@@ -36,7 +36,7 @@
                             <a href="{{ url_for('profile_view', user_id=post[4]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
                             {% endif %}
                                 {% if not post[7] %}
-                                <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ post[5] }}'s profile picture">
+                                <img src="{{ url_for('static', filename='images/default_pfp.jpg') }}" class="nav-user-pfp" alt="{{ post[5] }}'s profile picture">
                                 {% else %}
                                 <img src="{{ post[7] }}" class="nav-user-pfp" alt="{{ post[5] }}'s profile picture">
                                 {% endif %}
@@ -73,7 +73,7 @@
                         <a href="{{ url_for('profile_view', user_id=user[0]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
                         {% endif %}
                             {% if not user[6] %}
-                            <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ user[1] }}'s profile picture">
+                            <img src="{{ url_for('static', filename='images/default_pfp.jpg') }}" class="nav-user-pfp" alt="{{ user[1] }}'s profile picture">
                             {% else %}
                             <img src="{{ user[6] }}" class="nav-user-pfp" alt="{{ user[1] }}'s profile picture">
                             {% endif %}

@@ -14,7 +14,7 @@
                     <div class="posts-user-pfp-name position-relative">
                     <a href="{{ url_for('message_conversation', receiver_id=conversation[0]) }}" class="link-secondary link-offset-2 link-underline-opacity-0 link-underline-opacity-25-hover">
                         {% if not conversation[2] %}
-                        <img src="{{ url_for('static', filename='images/default_pfp_f.jpg') }}" class="nav-user-pfp" alt="{{ conversation[1] }}'s profile picture">
+                        <img src="{{ url_for('static', filename='images/default_pfp.jpg') }}" class="nav-user-pfp" alt="{{ conversation[1] }}'s profile picture">
                         {% else %}
                         <img src="{{ conversation[2] }}" class="nav-user-pfp" alt="{{ conversation[1] }}'s profile picture">
                         {% endif %}
