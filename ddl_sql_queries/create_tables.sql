@@ -19,7 +19,7 @@ CREATE TABLE user_accounts (
     CONSTRAINT chk_status CHECK (account_status IN ('Active', 'Inactive', 'Deleted')),
     CONSTRAINT chk_privacy CHECK (privacy IN ('Public', 'Private'))
 );
-    
+
 CREATE TABLE posts (
 	id INT NOT NULL AUTO_INCREMENT,
 	user_id INT NOT NULL,
@@ -124,7 +124,7 @@ CREATE TABLE message_media (
 
 CREATE TABLE notifications (
 	id INT NOT NULL AUTO_INCREMENT,
-    sender_id INT NOT NULL,
+    originator_id INT NOT NULL,
     receiver_id INT NOT NULL,
     notification_type VARCHAR(20) NOT NULL,
     content VARCHAR(100) NOT NULL,
