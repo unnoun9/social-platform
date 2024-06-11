@@ -9,20 +9,19 @@ from queries import query
 from datetime import datetime, timedelta
 
 
-# DONE - NEED TESTING - TODO - Make a different py file for all queries - Store them in a dictionary and call them as needed
-
-# DONE - NEED TESTING - TODO - Add the ability to allow users to soft delete their account - their account will be permanently deleted after 7 days (maybe a procedure or a trigger for this? (dayyum))
-# TODO - Add the ability for users to select pfps from their machine and upload them (hard)
-# TODO - Add the ability for users to add media to posts (hard)
-# TODO - Add the ability to reply on comments (hard)
-# TODO - Add the ability to endorse and condemn comments (hard - may require a new table (yikes))
-# TODO - The navbar search can be improved by improving the searching queries (hard and optional for now)
-
-# DONE - NEED TESTING - TODO - Implement blocking users
-# DONE - NEED TESTING - TODO - Implement messages
-# TODO - Implement sharing of posts through messages
-# TODO - Implement notifications
-# TODO - Implement communities
+"""
+TODOS that I may (or may not (depends on if I touch the project again (depends on how much time I got spare))) do
+    - Add the ability for users to select pfps from their machine and upload them
+    - Add the ability for users to add media to posts
+    - Add the ability to reply on comments
+    - Add the ability to endorse and condemn comments (may require a new table)
+    - The navbar search can be improved by improving the searching queries
+    - Implement sharing of posts through messages
+    - Implement notifications
+    - Implement communities
+    - ...
+    - Testing current stuff
+"""
 
 # Flask app instance
 app = Flask(__name__)
