@@ -13,3 +13,4 @@
 
 ## Build process
 - Assuming python, flask, and MySQL is properly setup, run `python app.py` in a terminal. That's it.
+- `ddl_sql_quries` has the queries to make all tables for the database in MySQL. Make sure to run those too!
