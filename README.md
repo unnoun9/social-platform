@@ -1,4 +1,4 @@
-# Social Platform, A cool Social Media Site
+# Social Platform, A Cool Social Media Site
 
 - *Incomplete Project*
 - Made to apply and learn a SQL Database.
